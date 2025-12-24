@@ -1,17 +1,6 @@
 {
   "$schema": "https://mintlify.com/schema/docs.json",
   "name": "TXCloud",
-  "languages": [
-    {
-      "code": "en",
-      "name": "English",
-      "default": true
-    },
-    {
-      "code": "fr",
-      "name": "Francais"
-    }
-  ],
   "logo": {
     "light": "/logo/light.svg",
     "dark": "/logo/dark.svg"
@@ -64,156 +53,318 @@
     "openapi/devex.yaml"
   ],
   "navigation": {
-    "tabs": [
+    "languages": [
       {
-        "tab": "Documentation",
-        "groups": [
+        "language": "en",
+        "tabs": [
           {
-            "group": "Getting Started",
-            "icon": "rocket",
-            "pages": [
-              "introduction",
-              "quickstart",
-              "authentication",
-              "rate-limits"
+            "tab": "Documentation",
+            "groups": [
+              {
+                "group": "Getting Started",
+                "icon": "rocket",
+                "pages": [
+                  "introduction",
+                  "quickstart",
+                  "authentication",
+                  "rate-limits"
+                ]
+              },
+              {
+                "group": "Core Concepts",
+                "icon": "book",
+                "pages": [
+                  "concepts/verification-flow",
+                  "concepts/risk-scoring",
+                  "concepts/webhooks",
+                  "concepts/idempotency"
+                ]
+              },
+              {
+                "group": "Guides",
+                "icon": "map",
+                "pages": [
+                  "guides/verify-identity",
+                  "guides/fraud-detection",
+                  "guides/transaction-monitoring",
+                  "guides/credit-assessment",
+                  "guides/business-verification",
+                  "guides/watchlist-screening"
+                ]
+              },
+              {
+                "group": "SDKs",
+                "icon": "code",
+                "pages": [
+                  "sdks/overview",
+                  "sdks/javascript",
+                  "sdks/python",
+                  "sdks/go",
+                  "sdks/java",
+                  "sdks/php"
+                ]
+              },
+              {
+                "group": "Resources",
+                "icon": "folder",
+                "pages": [
+                  "resources/error-codes",
+                  "resources/country-coverage",
+                  "resources/document-types",
+                  "resources/changelog",
+                  "resources/support"
+                ]
+              }
             ]
           },
           {
-            "group": "Core Concepts",
-            "icon": "book",
-            "pages": [
-              "concepts/verification-flow",
-              "concepts/risk-scoring",
-              "concepts/webhooks",
-              "concepts/idempotency"
-            ]
-          },
-          {
-            "group": "Guides",
-            "icon": "map",
-            "pages": [
-              "guides/verify-identity",
-              "guides/fraud-detection",
-              "guides/transaction-monitoring",
-              "guides/credit-assessment",
-              "guides/business-verification",
-              "guides/watchlist-screening"
-            ]
-          },
-          {
-            "group": "SDKs",
-            "icon": "code",
-            "pages": [
-              "sdks/overview",
-              "sdks/javascript",
-              "sdks/python",
-              "sdks/go",
-              "sdks/java",
-              "sdks/php"
-            ]
-          },
-          {
-            "group": "Resources",
-            "icon": "folder",
-            "pages": [
-              "resources/error-codes",
-              "resources/country-coverage",
-              "resources/document-types",
-              "resources/changelog",
-              "resources/support"
+            "tab": "API Reference",
+            "url": "api-reference/overview",
+            "groups": [
+              {
+                "group": "Overview",
+                "pages": [
+                  "api-reference/overview",
+                  "api-reference/authentication",
+                  "api-reference/errors",
+                  "api-reference/pagination"
+                ]
+              },
+              {
+                "group": "Identity API",
+                "icon": "id-card",
+                "pages": [
+                  "api-reference/identity/overview"
+                ],
+                "openapi": {
+                  "source": "openapi/identity.yaml",
+                  "directory": "/api-reference/identity"
+                }
+              },
+              {
+                "group": "FraudShield API",
+                "icon": "shield-halved",
+                "pages": [
+                  "api-reference/fraud/overview"
+                ],
+                "openapi": {
+                  "source": "openapi/fraud.yaml",
+                  "directory": "/api-reference/fraud"
+                }
+              },
+              {
+                "group": "TransactionGuard API",
+                "icon": "credit-card",
+                "pages": [
+                  "api-reference/transactions/overview"
+                ],
+                "openapi": {
+                  "source": "openapi/transactions.yaml",
+                  "directory": "/api-reference/transactions"
+                }
+              },
+              {
+                "group": "LendingRisk API",
+                "icon": "chart-line",
+                "pages": [
+                  "api-reference/lending/overview"
+                ],
+                "openapi": {
+                  "source": "openapi/lending.yaml",
+                  "directory": "/api-reference/lending"
+                }
+              },
+              {
+                "group": "KYB API",
+                "icon": "building",
+                "pages": [
+                  "api-reference/kyb/overview"
+                ],
+                "openapi": {
+                  "source": "openapi/kyb.yaml",
+                  "directory": "/api-reference/kyb"
+                }
+              },
+              {
+                "group": "Watchlist API",
+                "icon": "magnifying-glass",
+                "pages": [
+                  "api-reference/watchlist/overview"
+                ],
+                "openapi": {
+                  "source": "openapi/watchlist.yaml",
+                  "directory": "/api-reference/watchlist"
+                }
+              },
+              {
+                "group": "Developer Tools API",
+                "icon": "gear",
+                "pages": [
+                  "api-reference/devex/overview"
+                ],
+                "openapi": {
+                  "source": "openapi/devex.yaml",
+                  "directory": "/api-reference/devex"
+                }
+              }
             ]
           }
         ]
       },
       {
-        "tab": "API Reference",
-        "url": "api-reference/overview",
-        "groups": [
+        "language": "fr",
+        "tabs": [
           {
-            "group": "Overview",
-            "pages": [
-              "api-reference/overview",
-              "api-reference/authentication",
-              "api-reference/errors",
-              "api-reference/pagination"
+            "tab": "Documentation",
+            "groups": [
+              {
+                "group": "Demarrage",
+                "icon": "rocket",
+                "pages": [
+                  "fr/introduction",
+                  "fr/quickstart",
+                  "fr/authentication",
+                  "fr/rate-limits"
+                ]
+              },
+              {
+                "group": "Concepts Cles",
+                "icon": "book",
+                "pages": [
+                  "fr/concepts/verification-flow",
+                  "fr/concepts/risk-scoring",
+                  "fr/concepts/webhooks",
+                  "fr/concepts/idempotency"
+                ]
+              },
+              {
+                "group": "Guides",
+                "icon": "map",
+                "pages": [
+                  "fr/guides/verify-identity",
+                  "fr/guides/fraud-detection",
+                  "fr/guides/transaction-monitoring",
+                  "fr/guides/credit-assessment",
+                  "fr/guides/business-verification",
+                  "fr/guides/watchlist-screening"
+                ]
+              },
+              {
+                "group": "SDKs",
+                "icon": "code",
+                "pages": [
+                  "fr/sdks/overview",
+                  "fr/sdks/javascript",
+                  "fr/sdks/python",
+                  "fr/sdks/go",
+                  "fr/sdks/java",
+                  "fr/sdks/php"
+                ]
+              },
+              {
+                "group": "Ressources",
+                "icon": "folder",
+                "pages": [
+                  "fr/resources/error-codes",
+                  "fr/resources/country-coverage",
+                  "fr/resources/document-types",
+                  "fr/resources/changelog",
+                  "fr/resources/support"
+                ]
+              }
             ]
           },
           {
-            "group": "Identity API",
-            "icon": "id-card",
-            "pages": [
-              "api-reference/identity/overview"
-            ],
-            "openapi": {
-              "source": "openapi/identity.yaml",
-              "directory": "/api-reference/identity"
-            }
-          },
-          {
-            "group": "FraudShield API",
-            "icon": "shield-halved",
-            "pages": [
-              "api-reference/fraud/overview"
-            ],
-            "openapi": {
-              "source": "openapi/fraud.yaml",
-              "directory": "/api-reference/fraud"
-            }
-          },
-          {
-            "group": "TransactionGuard API",
-            "icon": "credit-card",
-            "pages": [
-              "api-reference/transactions/overview"
-            ],
-            "openapi": {
-              "source": "openapi/transactions.yaml",
-              "directory": "/api-reference/transactions"
-            }
-          },
-          {
-            "group": "LendingRisk API",
-            "icon": "chart-line",
-            "pages": [
-              "api-reference/lending/overview"
-            ],
-            "openapi": {
-              "source": "openapi/lending.yaml",
-              "directory": "/api-reference/lending"
-            }
-          },
-          {
-            "group": "KYB API",
-            "icon": "building",
-            "pages": [
-              "api-reference/kyb/overview"
-            ],
-            "openapi": {
-              "source": "openapi/kyb.yaml",
-              "directory": "/api-reference/kyb"
-            }
-          },
-          {
-            "group": "Watchlist API",
-            "icon": "magnifying-glass",
-            "pages": [
-              "api-reference/watchlist/overview"
-            ],
-            "openapi": {
-              "source": "openapi/watchlist.yaml",
-              "directory": "/api-reference/watchlist"
-            }
-          },
-          {
-            "group": "Developer Tools API",
-            "icon": "gear",
-            "pages": [
-              "api-reference/devex/overview"
-            ],
-            "openapi": {
-              "source": "openapi/devex.yaml",
-              "directory": "/api-reference/devex"
-            }
+            "tab": "Reference API",
+            "url": "api-reference/overview",
+            "groups": [
+              {
+                "group": "Apercu",
+                "pages": [
+                  "api-reference/overview",
+                  "api-reference/authentication",
+                  "api-reference/errors",
+                  "api-reference/pagination"
+                ]
+              },
+              {
+                "group": "API Identity",
+                "icon": "id-card",
+                "pages": [
+                  "api-reference/identity/overview"
+                ],
+                "openapi": {
+                  "source": "openapi/identity.yaml",
+                  "directory": "/api-reference/identity"
+                }
+              },
+              {
+                "group": "API FraudShield",
+                "icon": "shield-halved",
+                "pages": [
+                  "api-reference/fraud/overview"
+                ],
+                "openapi": {
+                  "source": "openapi/fraud.yaml",
+                  "directory": "/api-reference/fraud"
+                }
+              },
+              {
+                "group": "API TransactionGuard",
+                "icon": "credit-card",
+                "pages": [
+                  "api-reference/transactions/overview"
+                ],
+                "openapi": {
+                  "source": "openapi/transactions.yaml",
+                  "directory": "/api-reference/transactions"
+                }
+              },
+              {
+                "group": "API LendingRisk",
+                "icon": "chart-line",
+                "pages": [
+                  "api-reference/lending/overview"
+                ],
+                "openapi": {
+                  "source": "openapi/lending.yaml",
+                  "directory": "/api-reference/lending"
+                }
+              },
+              {
+                "group": "API KYB",
+                "icon": "building",
+                "pages": [
+                  "api-reference/kyb/overview"
+                ],
+                "openapi": {
+                  "source": "openapi/kyb.yaml",
+                  "directory": "/api-reference/kyb"
+                }
+              },
+              {
+                "group": "API Watchlist",
+                "icon": "magnifying-glass",
+                "pages": [
+                  "api-reference/watchlist/overview"
+                ],
+                "openapi": {
+                  "source": "openapi/watchlist.yaml",
+                  "directory": "/api-reference/watchlist"
+                }
+              },
+              {
+                "group": "API Outils Developpeur",
+                "icon": "gear",
+                "pages": [
+                  "api-reference/devex/overview"
+                ],
+                "openapi": {
+                  "source": "openapi/devex.yaml",
+                  "directory": "/api-reference/devex"
+                }
+              }
+            ]
           }
         ]
       }
