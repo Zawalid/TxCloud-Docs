@@ -1,0 +1,75 @@
+---
+title: "FraudShield API"
+sidebarTitle: "Overview"
+description: "Real-time fraud detection with device intelligence and behavioral analysis"
+icon: "shield-halved"
+---
+
+The FraudShield API provides comprehensive fraud prevention through device fingerprinting, velocity checks, and behavioral analysis.
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Device Intelligence" icon="mobile">
+    Fingerprint devices and detect emulators, VPNs, and proxies
+  </Card>
+  <Card title="Velocity Checks" icon="gauge-high">
+    Monitor transaction patterns and detect anomalies
+  </Card>
+  <Card title="Blocklists" icon="ban">
+    Manage device, IP, and user blocklists
+  </Card>
+  <Card title="Risk Scoring" icon="chart-simple">
+    Real-time risk scores with sub-50ms response times
+  </Card>
+</CardGroup>
+
+## Base URL
+
+```
+https://api.txcloud.io/v1/fraud
+```
+
+For testing, use the sandbox environment:
+
+```
+https://sandbox.api.txcloud.io/v1/fraud
+```
+
+## Authentication
+
+All requests require a Bearer token:
+
+```bash
+curl https://api.txcloud.io/v1/fraud/assess \
+  -H "Authorization: Bearer txc_live_your_api_key"
+```
+
+## Quick Start
+
+```javascript
+import TXCloud from '@txcloud/sdk';
+
+const txcloud = new TXCloud('your_api_key');
+
+const assessment = await txcloud.fraud.assess({
+  user_id: 'user_123',
+  event_type: 'login',
+  device: {
+    fingerprint: 'device_fingerprint...',
+    ip_address: '197.230.x.x'
+  }
+});
+
+console.log(assessment.risk_level); // 'low'
+```
+
+## Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/fraud/assess` | Assess fraud risk |
+| POST | `/fraud/device/fingerprint` | Register device fingerprint |
+| GET | `/fraud/device/{id}` | Get device details |
+| POST | `/fraud/blocklist` | Add to blocklist |
+| GET | `/fraud/blocklist` | List blocklist entries |

@@ -1,0 +1,688 @@
+openapi: 3.0.3
+info:
+  title: TXCloud DevEx API
+  version: "1.0.0"
+  description: |
+    Developer Experience API for managing API access, monitoring usage, and debugging.
+
+servers:
+  - url: https://api.txcloud.io/v1
+  - url: https://sandbox.api.txcloud.io/v1
+
+tags:
+  - name: Keys
+    description: API key management
+  - name: Webhooks
+    description: Webhook configuration
+  - name: Usage
+    description: Usage and billing
+  - name: Logs
+    description: Request logs
+  - name: Sandbox
+    description: Testing tools
+  - name: Account
+    description: Account management
+
+security:
+  - BearerAuth: []
+
+paths:
+  /developers/keys:
+    get:
+      operationId: listAPIKeys
+      tags: [Keys]
+      summary: List API keys
+      responses:
+        '200':
+          description: API keys
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIKeyList'
+    post:
+      operationId: createAPIKey
+      tags: [Keys]
+      summary: Create API key
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/APIKeyCreate'
+      responses:
+        '201':
+          description: Key created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/APIKeyCreated'
+
+  /developers/keys/{id}:
+    get:
+      operationId: getAPIKey
+      tags: [Keys]
+      summary: Get key details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Key details
+    delete:
+      operationId: revokeAPIKey
+      tags: [Keys]
+      summary: Revoke key
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Key revoked
+
+  /developers/keys/{id}/rotate:
+    post:
+      operationId: rotateAPIKey
+      tags: [Keys]
+      summary: Rotate key
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                grace_period_hours:
+                  type: integer
+                  default: 24
+      responses:
+        '200':
+          description: Key rotated
+
+  /developers/webhooks:
+    get:
+      operationId: listWebhooks
+      tags: [Webhooks]
+      summary: List webhook endpoints
+      responses:
+        '200':
+          description: Webhook endpoints
+    post:
+      operationId: createWebhook
+      tags: [Webhooks]
+      summary: Create webhook endpoint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookCreate'
+      responses:
+        '201':
+          description: Webhook created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookEndpoint'
+
+  /developers/webhooks/{id}:
+    get:
+      operationId: getWebhook
+      tags: [Webhooks]
+      summary: Get webhook details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Webhook details
+    put:
+      operationId: updateWebhook
+      tags: [Webhooks]
+      summary: Update webhook
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookCreate'
+      responses:
+        '200':
+          description: Webhook updated
+    delete:
+      operationId: deleteWebhook
+      tags: [Webhooks]
+      summary: Delete webhook
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Webhook deleted
+
+  /developers/webhooks/{id}/test:
+    post:
+      operationId: testWebhook
+      tags: [Webhooks]
+      summary: Test webhook
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                event_type:
+                  type: string
+      responses:
+        '200':
+          description: Test sent
+
+  /developers/webhooks/{id}/logs:
+    get:
+      operationId: getWebhookLogs
+      tags: [Webhooks]
+      summary: Get delivery logs
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Delivery logs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookLogList'
+
+  /developers/usage:
+    get:
+      operationId: getUsage
+      tags: [Usage]
+      summary: Get usage summary
+      responses:
+        '200':
+          description: Usage summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsageSummary'
+
+  /developers/usage/daily:
+    get:
+      operationId: getDailyUsage
+      tags: [Usage]
+      summary: Daily breakdown
+      responses:
+        '200':
+          description: Daily usage
+
+  /developers/usage/by-endpoint:
+    get:
+      operationId: getUsageByEndpoint
+      tags: [Usage]
+      summary: Usage by endpoint
+      responses:
+        '200':
+          description: Endpoint usage
+
+  /developers/limits:
+    get:
+      operationId: getRateLimits
+      tags: [Usage]
+      summary: Get rate limits
+      responses:
+        '200':
+          description: Rate limits
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RateLimits'
+
+  /developers/billing/current:
+    get:
+      operationId: getCurrentBilling
+      tags: [Usage]
+      summary: Current billing period
+      responses:
+        '200':
+          description: Current billing
+
+  /developers/billing/invoices:
+    get:
+      operationId: listInvoices
+      tags: [Usage]
+      summary: List invoices
+      responses:
+        '200':
+          description: Invoices
+
+  /developers/logs:
+    get:
+      operationId: listRequestLogs
+      tags: [Logs]
+      summary: List request logs
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: endpoint
+          in: query
+          schema:
+            type: string
+        - name: method
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Request logs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestLogList'
+
+  /developers/logs/{id}:
+    get:
+      operationId: getRequestLog
+      tags: [Logs]
+      summary: Get log details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Log details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RequestLog'
+
+  /developers/errors:
+    get:
+      operationId: listErrors
+      tags: [Logs]
+      summary: List recent errors
+      responses:
+        '200':
+          description: Recent errors
+
+  /developers/sandbox/reset:
+    post:
+      operationId: resetSandbox
+      tags: [Sandbox]
+      summary: Reset sandbox
+      responses:
+        '200':
+          description: Sandbox reset
+
+  /developers/sandbox/fixtures:
+    get:
+      operationId: getFixtures
+      tags: [Sandbox]
+      summary: List test fixtures
+      responses:
+        '200':
+          description: Test fixtures
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TestFixtures'
+
+  /developers/sandbox/simulate:
+    post:
+      operationId: simulate
+      tags: [Sandbox]
+      summary: Simulate scenario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                scenario:
+                  type: string
+                config:
+                  type: object
+      responses:
+        '200':
+          description: Scenario configured
+
+  /developers/account:
+    get:
+      operationId: getAccount
+      tags: [Account]
+      summary: Get account info
+      responses:
+        '200':
+          description: Account info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Account'
+
+  /developers/account/settings:
+    put:
+      operationId: updateSettings
+      tags: [Account]
+      summary: Update settings
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Settings updated
+
+  /developers/account/team:
+    get:
+      operationId: listTeam
+      tags: [Account]
+      summary: List team members
+      responses:
+        '200':
+          description: Team members
+    post:
+      operationId: inviteTeamMember
+      tags: [Account]
+      summary: Invite team member
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                role:
+                  type: string
+      responses:
+        '201':
+          description: Invitation sent
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+
+  schemas:
+    APIKeyList:
+      type: object
+      properties:
+        object:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/APIKey'
+
+    APIKey:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        prefix:
+          type: string
+        environment:
+          type: string
+          enum: [live, test]
+        permissions:
+          type: array
+          items:
+            type: string
+        last_used:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+
+    APIKeyCreate:
+      type: object
+      required: [name, environment]
+      properties:
+        name:
+          type: string
+        environment:
+          type: string
+          enum: [live, test]
+        permissions:
+          type: array
+          items:
+            type: string
+        allowed_ips:
+          type: array
+          items:
+            type: string
+        rate_limit:
+          type: integer
+        expires_at:
+          type: string
+          format: date-time
+
+    APIKeyCreated:
+      allOf:
+        - $ref: '#/components/schemas/APIKey'
+        - type: object
+          properties:
+            key:
+              type: string
+              description: Full key (only shown once)
+
+    WebhookCreate:
+      type: object
+      required: [url, events]
+      properties:
+        url:
+          type: string
+          format: uri
+        events:
+          type: array
+          items:
+            type: string
+        description:
+          type: string
+
+    WebhookEndpoint:
+      type: object
+      properties:
+        id:
+          type: string
+        url:
+          type: string
+        events:
+          type: array
+          items:
+            type: string
+        secret:
+          type: string
+        status:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    WebhookLogList:
+      type: object
+      properties:
+        object:
+          type: string
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              event_id:
+                type: string
+              event_type:
+                type: string
+              status:
+                type: string
+              response_code:
+                type: integer
+              attempts:
+                type: integer
+              delivered_at:
+                type: string
+                format: date-time
+
+    UsageSummary:
+      type: object
+      properties:
+        period:
+          type: object
+        total_requests:
+          type: integer
+        successful:
+          type: integer
+        failed:
+          type: integer
+        by_api:
+          type: object
+        rate_limit_hits:
+          type: integer
+        estimated_cost:
+          type: object
+
+    RateLimits:
+      type: object
+      properties:
+        plan:
+          type: string
+        limits:
+          type: object
+          properties:
+            requests_per_minute:
+              type: integer
+            requests_per_day:
+              type: integer
+            concurrent_requests:
+              type: integer
+        current_usage:
+          type: object
+        by_endpoint:
+          type: object
+
+    RequestLogList:
+      type: object
+      properties:
+        object:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/RequestLogSummary'
+
+    RequestLogSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        method:
+          type: string
+        endpoint:
+          type: string
+        status_code:
+          type: integer
+        response_time_ms:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+
+    RequestLog:
+      allOf:
+        - $ref: '#/components/schemas/RequestLogSummary'
+        - type: object
+          properties:
+            url:
+              type: string
+            request:
+              type: object
+              properties:
+                headers:
+                  type: object
+                body:
+                  type: object
+            response:
+              type: object
+              properties:
+                status_code:
+                  type: integer
+                headers:
+                  type: object
+                body:
+                  type: object
+
+    TestFixtures:
+      type: object
+      properties:
+        identity:
+          type: object
+        transactions:
+          type: object
+        watchlist:
+          type: object
+
+    Account:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        email:
+          type: string
+        plan:
+          type: string
+        settings:
+          type: object
+        created_at:
+          type: string
+          format: date-time

@@ -1,0 +1,690 @@
+openapi: 3.0.3
+info:
+  title: TXCloud KYB API
+  version: "1.0.0"
+  description: |
+    Know Your Business - Business verification and corporate due diligence.
+    Verify companies, identify beneficial owners, and screen against watchlists.
+
+servers:
+  - url: https://api.txcloud.io/v1
+  - url: https://sandbox.api.txcloud.io/v1
+
+tags:
+  - name: Verification
+    description: Business verification
+  - name: Companies
+    description: Company data
+  - name: Documents
+    description: Document verification
+  - name: Screening
+    description: Sanctions/PEP screening
+  - name: Risk
+    description: Risk assessment
+  - name: Monitoring
+    description: Company monitoring
+  - name: Registries
+    description: Registry access
+
+security:
+  - BearerAuth: []
+
+paths:
+  /kyb/verify:
+    post:
+      operationId: verifyBusiness
+      tags: [Verification]
+      summary: Full business verification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KYBVerificationRequest'
+      responses:
+        '200':
+          description: Verification result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KYBVerification'
+
+  /kyb/search:
+    post:
+      operationId: searchBusinesses
+      tags: [Verification]
+      summary: Search businesses
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query:
+                  type: string
+                country:
+                  type: string
+                filters:
+                  type: object
+                limit:
+                  type: integer
+      responses:
+        '200':
+          description: Search results
+
+  /kyb/verifications:
+    get:
+      operationId: listKYBVerifications
+      tags: [Verification]
+      summary: List verifications
+      responses:
+        '200':
+          description: Verifications list
+
+  /kyb/verifications/{id}:
+    get:
+      operationId: getKYBVerification
+      tags: [Verification]
+      summary: Get verification
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Verification details
+
+  /kyb/companies/{id}:
+    get:
+      operationId: getCompany
+      tags: [Companies]
+      summary: Get company profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Company profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Company'
+
+  /kyb/companies/{id}/structure:
+    get:
+      operationId: getOwnershipStructure
+      tags: [Companies]
+      summary: Get ownership structure
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Ownership structure
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnershipStructure'
+
+  /kyb/companies/{id}/directors:
+    get:
+      operationId: getDirectors
+      tags: [Companies]
+      summary: Get directors
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Directors list
+
+  /kyb/companies/{id}/ubos:
+    get:
+      operationId: getUBOs
+      tags: [Companies]
+      summary: Get beneficial owners
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: UBOs list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UBOList'
+
+  /kyb/companies/{id}/documents:
+    get:
+      operationId: getCompanyDocuments
+      tags: [Companies]
+      summary: Get company documents
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Documents list
+
+  /kyb/companies/{id}/financials:
+    get:
+      operationId: getCompanyFinancials
+      tags: [Companies]
+      summary: Get financials
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Financial data
+
+  /kyb/companies/{id}/history:
+    get:
+      operationId: getCompanyHistory
+      tags: [Companies]
+      summary: Get company history
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Company history
+
+  /kyb/documents/verify:
+    post:
+      operationId: verifyBusinessDocument
+      tags: [Documents]
+      summary: Verify business document
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DocumentVerifyRequest'
+      responses:
+        '200':
+          description: Verification result
+
+  /kyb/documents/extract:
+    post:
+      operationId: extractBusinessDocument
+      tags: [Documents]
+      summary: Extract document data
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: byte
+                type:
+                  type: string
+      responses:
+        '200':
+          description: Extracted data
+
+  /kyb/documents/{id}:
+    get:
+      operationId: getBusinessDocument
+      tags: [Documents]
+      summary: Get document
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Document details
+
+  /kyb/screen:
+    post:
+      operationId: screenCompany
+      tags: [Screening]
+      summary: Screen company & officers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScreeningRequest'
+      responses:
+        '200':
+          description: Screening result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScreeningResult'
+
+  /kyb/screen/directors:
+    post:
+      operationId: screenDirector
+      tags: [Screening]
+      summary: Screen individual director
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                date_of_birth:
+                  type: string
+                nationality:
+                  type: string
+      responses:
+        '200':
+          description: Screening result
+
+  /kyb/screen/{id}:
+    get:
+      operationId: getScreening
+      tags: [Screening]
+      summary: Get screening result
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Screening details
+
+  /kyb/risk/assess:
+    post:
+      operationId: assessBusinessRisk
+      tags: [Risk]
+      summary: Assess business risk
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RiskAssessmentRequest'
+      responses:
+        '200':
+          description: Risk assessment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BusinessRiskAssessment'
+
+  /kyb/risk/{id}:
+    get:
+      operationId: getRiskAssessment
+      tags: [Risk]
+      summary: Get risk assessment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Assessment details
+
+  /kyb/monitor/subscribe:
+    post:
+      operationId: subscribeKYBMonitoring
+      tags: [Monitoring]
+      summary: Subscribe to monitoring
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/KYBMonitorSubscription'
+      responses:
+        '201':
+          description: Subscription created
+
+  /kyb/monitor/{id}:
+    delete:
+      operationId: unsubscribeKYBMonitoring
+      tags: [Monitoring]
+      summary: Unsubscribe
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Unsubscribed
+
+  /kyb/monitor:
+    get:
+      operationId: listKYBMonitored
+      tags: [Monitoring]
+      summary: List monitored companies
+      responses:
+        '200':
+          description: Monitored list
+
+  /kyb/monitor/{id}/alerts:
+    get:
+      operationId: getKYBAlerts
+      tags: [Monitoring]
+      summary: Get alerts
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Alerts
+
+  /kyb/registries:
+    get:
+      operationId: listRegistries
+      tags: [Registries]
+      summary: List registries
+      responses:
+        '200':
+          description: Available registries
+
+  /kyb/registries/{country}:
+    get:
+      operationId: getRegistry
+      tags: [Registries]
+      summary: Get registry for country
+      parameters:
+        - name: country
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Registry details
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+
+  schemas:
+    KYBVerificationRequest:
+      type: object
+      required: [company]
+      properties:
+        company:
+          type: object
+          required: [name, country]
+          properties:
+            name:
+              type: string
+            registration_number:
+              type: string
+            tax_id:
+              type: string
+            country:
+              type: string
+            address:
+              type: object
+        checks:
+          type: array
+          items:
+            type: string
+        include_documents:
+          type: boolean
+        include_financials:
+          type: boolean
+        screening:
+          type: object
+          properties:
+            screen_directors:
+              type: boolean
+            screen_ubos:
+              type: boolean
+            watchlists:
+              type: array
+              items:
+                type: string
+
+    KYBVerification:
+      type: object
+      properties:
+        id:
+          type: string
+        object:
+          type: string
+        status:
+          type: string
+        decision:
+          type: object
+          properties:
+            recommendation:
+              type: string
+            risk_level:
+              type: string
+            risk_score:
+              type: integer
+        company:
+          $ref: '#/components/schemas/Company'
+        checks:
+          type: object
+        directors:
+          type: array
+          items:
+            type: object
+        ubos:
+          type: array
+          items:
+            type: object
+
+    Company:
+      type: object
+      properties:
+        name:
+          type: string
+        legal_name:
+          type: string
+        registration_number:
+          type: string
+        tax_id:
+          type: string
+        legal_form:
+          type: string
+        status:
+          type: string
+        incorporation_date:
+          type: string
+          format: date
+        country:
+          type: string
+        address:
+          type: object
+        industry:
+          type: object
+        capital:
+          type: object
+
+    OwnershipStructure:
+      type: object
+      properties:
+        company_id:
+          type: string
+        shareholders:
+          type: array
+          items:
+            type: object
+        subsidiaries:
+          type: array
+          items:
+            type: object
+        structure_depth:
+          type: integer
+        total_ubos:
+          type: integer
+
+    UBOList:
+      type: object
+      properties:
+        company_id:
+          type: string
+        ubos:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+              nationality:
+                type: string
+              ownership:
+                type: object
+              verification:
+                type: object
+              screening:
+                type: object
+        total_ownership_identified:
+          type: number
+        ubo_threshold:
+          type: number
+
+    DocumentVerifyRequest:
+      type: object
+      required: [document, company]
+      properties:
+        document:
+          type: object
+          properties:
+            type:
+              type: string
+            file:
+              type: string
+              format: byte
+            country:
+              type: string
+        company:
+          type: object
+          properties:
+            name:
+              type: string
+            registration_number:
+              type: string
+        checks:
+          type: array
+          items:
+            type: string
+
+    ScreeningRequest:
+      type: object
+      properties:
+        company_id:
+          type: string
+        watchlists:
+          type: array
+          items:
+            type: string
+        include_directors:
+          type: boolean
+        include_ubos:
+          type: boolean
+
+    ScreeningResult:
+      type: object
+      properties:
+        id:
+          type: string
+        overall_status:
+          type: string
+        company:
+          type: object
+        directors:
+          type: array
+          items:
+            type: object
+        ubos:
+          type: array
+          items:
+            type: object
+        summary:
+          type: object
+
+    RiskAssessmentRequest:
+      type: object
+      properties:
+        company_id:
+          type: string
+        relationship_type:
+          type: string
+        transaction_volume:
+          type: object
+
+    BusinessRiskAssessment:
+      type: object
+      properties:
+        id:
+          type: string
+        overall_risk:
+          type: object
+          properties:
+            level:
+              type: string
+            score:
+              type: integer
+            tier:
+              type: string
+        risk_breakdown:
+          type: object
+        due_diligence_level:
+          type: string
+        recommendations:
+          type: array
+          items:
+            type: string
+
+    KYBMonitorSubscription:
+      type: object
+      required: [company_id]
+      properties:
+        company_id:
+          type: string
+        alerts:
+          type: array
+          items:
+            type: string
+        webhook_url:
+          type: string
+        check_frequency:
+          type: string

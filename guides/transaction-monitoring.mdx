@@ -1,0 +1,365 @@
+---
+title: "Transaction Monitoring"
+sidebarTitle: "Transaction Monitoring"
+description: "Score transactions in real-time with TXCloud TransactionGuard"
+icon: "credit-card"
+---
+
+## Overview
+
+TransactionGuard provides real-time transaction scoring to prevent payment fraud. Score transactions in under 50ms and get instant approve/review/decline decisions.
+
+## Quick Start
+
+<CodeGroup>
+```javascript JavaScript
+const score = await txcloud.transactions.score({
+  amount: 5000,
+  currency: 'MAD',
+  type: 'p2p_transfer',
+  
+  sender: {
+    user_id: 'usr_abc123',
+    device_id: 'dev_xyz789',
+    ip_address: '102.45.67.89'
+  },
+  
+  recipient: {
+    type: 'phone',
+    value: '+212612345678',
+    name: 'Mohammed El Amrani'
+  }
+});
+
+console.log('Decision:', score.decision);  // 'approve'
+console.log('Risk Score:', score.risk_score);  // 180
+```
+
+```python Python
+score = txcloud.transactions.score(
+    amount=5000,
+    currency="MAD",
+    type="p2p_transfer",
+    sender={
+        "user_id": "usr_abc123",
+        "device_id": "dev_xyz789"
+    },
+    recipient={
+        "type": "phone",
+        "value": "+212612345678"
+    }
+)
+
+print(f"Decision: {score.decision}")
+print(f"Risk Score: {score.risk_score}")
+```
+</CodeGroup>
+
+## Decision Logic
+
+TransactionGuard returns one of four decisions:
+
+| Decision | Score Range | Action |
+|----------|-------------|--------|
+| `approve` | 0-300 | ✅ Proceed with transaction |
+| `review` | 301-600 | 👀 Queue for manual review |
+| `challenge` | 601-800 | 🔐 Require step-up auth |
+| `decline` | 801-1000 | ❌ Block transaction |
+
+```javascript
+switch (score.decision) {
+  case 'approve':
+    await processPayment(transaction);
+    break;
+    
+  case 'review':
+    await queueForReview(transaction, score);
+    // May still process with delay
+    break;
+    
+  case 'challenge':
+    await requestOTP(user);
+    // Process after OTP verified
+    break;
+    
+  case 'decline':
+    await blockTransaction(transaction);
+    await notifyUser('Transaction declined for security');
+    break;
+}
+```
+
+## Score Response
+
+```json
+{
+  "id": "trs_a1b2c3d4e5f6",
+  "created_at": "2025-01-15T10:30:00Z",
+  "processing_time_ms": 45,
+  
+  "decision": "approve",
+  "risk_score": 180,
+  "risk_level": "low",
+  
+  "signals": {
+    "positive": ["known_recipient", "normal_amount", "trusted_device"],
+    "negative": [],
+    "neutral": ["first_transfer_this_week"]
+  },
+  
+  "checks": {
+    "velocity": {
+      "passed": true,
+      "daily_count": 2,
+      "daily_limit": 10
+    },
+    "amount": {
+      "passed": true,
+      "vs_average": 1.2
+    },
+    "recipient": {
+      "passed": true,
+      "is_known": true,
+      "trust_level": "high"
+    },
+    "device": {
+      "passed": true,
+      "is_trusted": true
+    }
+  }
+}
+```
+
+## Transaction Types
+
+| Type | Description |
+|------|-------------|
+| `p2p_transfer` | Person to person transfer |
+| `bill_payment` | Bill/utility payment |
+| `merchant_payment` | Payment to merchant |
+| `cash_withdrawal` | ATM/agent withdrawal |
+| `bank_transfer` | Bank to bank transfer |
+| `international_transfer` | Cross-border transfer |
+| `mobile_topup` | Airtime/mobile recharge |
+
+## User Risk Profiles
+
+TransactionGuard builds risk profiles from transaction history:
+
+```javascript
+// Get user's transaction profile
+const profile = await txcloud.transactions.users.getProfile(userId);
+
+console.log('Trust Level:', profile.trust_level);
+console.log('Total Transactions:', profile.statistics.total_transactions);
+console.log('Average Amount:', profile.statistics.average_amount);
+
+// Profile includes patterns
+console.log('Typical Amount Range:', profile.patterns.typical_amount_range);
+console.log('Typical Recipients:', profile.patterns.typical_recipients);
+console.log('Typical Times:', profile.patterns.typical_times);
+```
+
+### Response
+
+```json
+{
+  "user_id": "usr_abc123",
+  "trust_level": "high",
+  "trust_score": 850,
+  
+  "statistics": {
+    "total_transactions": 156,
+    "total_amount": 245000,
+    "average_amount": 1571,
+    "max_amount": 15000
+  },
+  
+  "patterns": {
+    "typical_amount_range": [500, 5000],
+    "typical_recipients": 8,
+    "typical_frequency": "weekly",
+    "typical_channels": ["mobile_app"],
+    "typical_times": ["09:00-18:00"]
+  },
+  
+  "risk_factors": {
+    "fraud_reports": 0,
+    "disputes": 0,
+    "chargebacks": 0
+  }
+}
+```
+
+## Recipient Checking
+
+Check recipient risk before showing confirmation:
+
+```javascript
+const recipientCheck = await txcloud.transactions.recipients.check({
+  type: 'phone',
+  value: '+212612345678',
+  sender_user_id: userId
+});
+
+// Show risk warning if needed
+if (recipientCheck.risk_level === 'high') {
+  await showWarning('This recipient has been flagged. Proceed with caution.');
+}
+
+// Show relationship info
+if (recipientCheck.relationship.is_known) {
+  console.log(`You've sent to this recipient ${recipientCheck.relationship.times_sent} times`);
+}
+```
+
+## Custom Rules
+
+Create transaction-specific rules:
+
+```javascript
+// High value international transfer
+await txcloud.transactions.rules.create({
+  name: 'High Value International',
+  condition: "type = 'international_transfer' AND amount > 20000",
+  action: 'review',
+  score_adjustment: 300
+});
+
+// First time recipient large amount
+await txcloud.transactions.rules.create({
+  name: 'New Recipient High Value',
+  condition: "recipient.times_sent = 0 AND amount > 5000",
+  action: 'challenge',
+  score_adjustment: 200
+});
+
+// Unusual time
+await txcloud.transactions.rules.create({
+  name: 'Late Night High Value',
+  condition: "(time.hour >= 23 OR time.hour <= 5) AND amount > 5000",
+  action: 'review',
+  score_adjustment: 150
+});
+```
+
+## Feedback Loop
+
+Report transaction outcomes to improve scoring:
+
+```javascript
+// Report completed transaction
+await txcloud.transactions.report({
+  score_id: 'trs_a1b2c3d4e5f6',
+  outcome: 'completed',
+  fraud_reported: false
+});
+
+// Report fraud
+await txcloud.transactions.report({
+  score_id: 'trs_xyz789',
+  outcome: 'fraud_confirmed',
+  fraud_reported: true,
+  notes: 'Customer reported unauthorized transaction'
+});
+```
+
+<Tip>
+  Regular feedback improves model accuracy. Report all outcomes, especially confirmed fraud.
+</Tip>
+
+## Analytics
+
+Monitor transaction patterns:
+
+```javascript
+const analytics = await txcloud.transactions.analytics.summary({
+  period: '30d'
+});
+
+console.log('Total Transactions:', analytics.volume.total_transactions);
+console.log('Approved:', analytics.decisions.approved);
+console.log('Declined:', analytics.decisions.declined);
+console.log('Fraud Rate:', analytics.fraud.fraud_rate);
+```
+
+## Integration Example
+
+Complete payment flow with TransactionGuard:
+
+```javascript
+async function processPayment(userId, amount, recipientPhone) {
+  // 1. Score the transaction
+  const score = await txcloud.transactions.score({
+    amount,
+    currency: 'MAD',
+    type: 'p2p_transfer',
+    sender: { user_id: userId },
+    recipient: { type: 'phone', value: recipientPhone }
+  });
+  
+  // 2. Handle decision
+  if (score.decision === 'decline') {
+    throw new Error('Transaction declined for security reasons');
+  }
+  
+  if (score.decision === 'challenge') {
+    // Require OTP
+    const otpVerified = await verifyOTP(userId);
+    if (!otpVerified) {
+      throw new Error('OTP verification failed');
+    }
+  }
+  
+  if (score.decision === 'review') {
+    // Queue for review but allow to proceed
+    await queueForReview(score.id);
+  }
+  
+  // 3. Process the payment
+  const payment = await executePayment(userId, amount, recipientPhone);
+  
+  // 4. Report outcome
+  await txcloud.transactions.report({
+    score_id: score.id,
+    outcome: 'completed'
+  });
+  
+  return payment;
+}
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Call Early in Flow" icon="forward">
+    Score transactions before showing confirmation to catch fraud early.
+  </Accordion>
+  
+  <Accordion title="Include All Available Data" icon="database">
+    The more context you provide, the better the scoring:
+    - Device ID
+    - IP address
+    - Session info
+    - User context
+  </Accordion>
+  
+  <Accordion title="Handle All Decisions" icon="list-check">
+    Implement proper flows for all four decisions (approve, review, challenge, decline).
+  </Accordion>
+  
+  <Accordion title="Report All Outcomes" icon="flag">
+    Feed back completed transactions AND fraud to improve the model.
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Credit Assessment" icon="chart-line" href="/guides/credit-assessment">
+    Add credit risk scoring
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/overview">
+    Explore TransactionGuard endpoints
+  </Card>
+</CardGroup>

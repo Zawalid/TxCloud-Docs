@@ -1,0 +1,56 @@
+---
+title: "PHP SDK"
+sidebarTitle: "PHP"
+description: "Official TXCloud SDK for PHP"
+icon: "php"
+---
+
+## Installation
+
+```bash
+composer require txcloud/txcloud-php
+```
+
+## Quick Start
+
+```php
+<?php
+require_once 'vendor/autoload.php';
+
+use TXCloud\TXCloud;
+
+$txcloud = new TXCloud(getenv('TXCLOUD_API_KEY'));
+
+$verification = $txcloud->identity->verify([
+    'document_front' => $documentBase64,
+    'country' => 'MA',
+    'document_type' => 'national_id'
+]);
+
+echo "Status: " . $verification->status;
+```
+
+## Configuration
+
+```php
+$txcloud = new TXCloud(
+    apiKey: getenv('TXCLOUD_API_KEY'),
+    environment: 'production',
+    timeout: 30
+);
+```
+
+## Error Handling
+
+```php
+use TXCloud\Exceptions\ValidationException;
+use TXCloud\Exceptions\RateLimitException;
+
+try {
+    $result = $txcloud->identity->verify([...]);
+} catch (ValidationException $e) {
+    echo "Validation failed: " . $e->getMessage();
+} catch (RateLimitException $e) {
+    echo "Rate limited, retry after: " . $e->getRetryAfter();
+}
+```

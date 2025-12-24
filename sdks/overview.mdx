@@ -1,0 +1,99 @@
+---
+title: "SDK Overview"
+sidebarTitle: "Overview"
+description: "Official TXCloud SDKs for popular languages"
+icon: "code"
+---
+
+## Official SDKs
+
+TXCloud provides official SDKs for the most popular programming languages:
+
+<CardGroup cols={2}>
+  <Card title="JavaScript/TypeScript" icon="js" href="/sdks/javascript">
+    npm install @txcloud/sdk
+  </Card>
+  <Card title="Python" icon="python" href="/sdks/python">
+    pip install txcloud
+  </Card>
+  <Card title="Go" icon="golang" href="/sdks/go">
+    go get github.com/txcloud/txcloud-go
+  </Card>
+  <Card title="Java" icon="java" href="/sdks/java">
+    Maven/Gradle dependency
+  </Card>
+  <Card title="PHP" icon="php" href="/sdks/php">
+    composer require txcloud/txcloud-php
+  </Card>
+</CardGroup>
+
+## Features
+
+All SDKs include:
+
+- ✅ Full API coverage
+- ✅ TypeScript/type definitions
+- ✅ Automatic retries with exponential backoff
+- ✅ Idempotency key support
+- ✅ Webhook signature verification
+- ✅ Comprehensive error handling
+
+## Quick Example
+
+<CodeGroup>
+```javascript JavaScript
+import TXCloud from '@txcloud/sdk';
+
+const txcloud = new TXCloud({ apiKey: process.env.TXCLOUD_API_KEY });
+
+const verification = await txcloud.identity.verify({
+  document_front: documentBase64,
+  country: 'MA'
+});
+```
+
+```python Python
+from txcloud import TXCloud
+
+txcloud = TXCloud(api_key=os.environ["TXCLOUD_API_KEY"])
+
+verification = txcloud.identity.verify(
+    document_front=document_base64,
+    country="MA"
+)
+```
+
+```go Go
+client := txcloud.NewClient(os.Getenv("TXCLOUD_API_KEY"))
+
+verification, err := client.Identity.Verify(&txcloud.VerifyRequest{
+    DocumentFront: documentBase64,
+    Country: "MA",
+})
+```
+</CodeGroup>
+
+## Mobile SDKs
+
+For mobile applications:
+
+| Platform | Package |
+|----------|---------|
+| React Native | `@txcloud/react-native-sdk` |
+| iOS | `TXCloudSDK` (CocoaPods/SPM) |
+| Android | `com.txcloud:sdk` (Maven) |
+| Flutter | `txcloud_flutter` |
+
+## Community SDKs
+
+Community-maintained SDKs:
+
+| Language | Package | Maintainer |
+|----------|---------|------------|
+| Ruby | `txcloud-ruby` | Community |
+| C# | `TXCloud.NET` | Community |
+| Rust | `txcloud-rs` | Community |
+
+<Note>
+  Community SDKs are not officially supported. Use at your own discretion.
+</Note>

@@ -1,0 +1,33 @@
+---
+title: "API Authentication"
+sidebarTitle: "Authentication"
+description: "How to authenticate API requests"
+---
+
+## Bearer Token
+
+Include your API key in the Authorization header:
+
+```bash
+Authorization: Bearer txc_live_your_api_key
+```
+
+## API Key Types
+
+| Prefix | Environment |
+|--------|-------------|
+| `txc_test_` | Sandbox |
+| `txc_live_` | Production |
+
+## Example Request
+
+```bash
+curl https://api.txcloud.io/v1/identity/verify \
+  -H "Authorization: Bearer txc_live_abc123" \
+  -H "Content-Type: application/json" \
+  -d '{"document_front": "..."}'
+```
+
+<Card title="Full Authentication Guide" icon="key" href="/authentication">
+  Learn more about managing API keys
+</Card>

@@ -1,0 +1,616 @@
+openapi: 3.0.3
+info:
+  title: TXCloud TransactionGuard API
+  version: "1.0.0"
+  description: |
+    Real-time transaction risk scoring to prevent payment fraud.
+    Analyzes transaction patterns, user behavior, and recipient risk.
+
+servers:
+  - url: https://api.txcloud.io/v1
+  - url: https://sandbox.api.txcloud.io/v1
+
+tags:
+  - name: Scoring
+    description: Real-time transaction scoring
+  - name: Transactions
+    description: Transaction management
+  - name: Users
+    description: User risk profiles
+  - name: Recipients
+    description: Recipient/merchant intelligence
+  - name: Rules
+    description: Transaction rules
+  - name: Analytics
+    description: Transaction analytics
+
+security:
+  - BearerAuth: []
+
+paths:
+  /transactions/score:
+    post:
+      operationId: scoreTransaction
+      tags: [Scoring]
+      summary: Score transaction
+      description: Scores a transaction in real-time before authorization
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionScoreRequest'
+      responses:
+        '200':
+          description: Score result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionScore'
+
+  /transactions/report:
+    post:
+      operationId: reportOutcome
+      tags: [Scoring]
+      summary: Report transaction outcome
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionReport'
+      responses:
+        '200':
+          description: Outcome recorded
+
+  /transactions:
+    get:
+      operationId: listTransactions
+      tags: [Transactions]
+      summary: List transactions
+      parameters:
+        - name: decision
+          in: query
+          schema:
+            type: string
+        - name: risk_level
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Transactions list
+
+  /transactions/{id}:
+    get:
+      operationId: getTransaction
+      tags: [Transactions]
+      summary: Get transaction
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Transaction details
+
+  /transactions/{id}/signals:
+    get:
+      operationId: getTransactionSignals
+      tags: [Transactions]
+      summary: Get risk signals
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Risk signals
+
+  /transactions/{id}/review:
+    post:
+      operationId: reviewTransaction
+      tags: [Transactions]
+      summary: Submit review decision
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                decision:
+                  type: string
+                reviewer_id:
+                  type: string
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Review submitted
+
+  /transactions/{id}/flag:
+    post:
+      operationId: flagTransaction
+      tags: [Transactions]
+      summary: Flag as fraudulent
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Transaction flagged
+
+  /transactions/users/{id}/profile:
+    get:
+      operationId: getUserProfile
+      tags: [Users]
+      summary: Get user risk profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+
+  /transactions/users/{id}/history:
+    get:
+      operationId: getUserHistory
+      tags: [Users]
+      summary: Get transaction history
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Transaction history
+
+  /transactions/users/{id}/patterns:
+    get:
+      operationId: getUserPatterns
+      tags: [Users]
+      summary: Get spending patterns
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Spending patterns
+
+  /transactions/users/{id}/trust:
+    post:
+      operationId: adjustTrust
+      tags: [Users]
+      summary: Adjust trust level
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                adjustment:
+                  type: string
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Trust adjusted
+
+  /transactions/recipients/check:
+    post:
+      operationId: checkRecipient
+      tags: [Recipients]
+      summary: Check recipient risk
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type, value]
+              properties:
+                type:
+                  type: string
+                value:
+                  type: string
+                sender_user_id:
+                  type: string
+      responses:
+        '200':
+          description: Recipient check result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecipientCheck'
+
+  /transactions/recipients/{id}:
+    get:
+      operationId: getRecipient
+      tags: [Recipients]
+      summary: Get recipient profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Recipient profile
+
+  /transactions/merchants/check:
+    post:
+      operationId: checkMerchant
+      tags: [Recipients]
+      summary: Check merchant risk
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                merchant_id:
+                  type: string
+                merchant_name:
+                  type: string
+      responses:
+        '200':
+          description: Merchant check result
+
+  /transactions/merchants/{id}:
+    get:
+      operationId: getMerchant
+      tags: [Recipients]
+      summary: Get merchant profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Merchant profile
+
+  /transactions/merchants/{id}/flag:
+    post:
+      operationId: flagMerchant
+      tags: [Recipients]
+      summary: Flag merchant
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Merchant flagged
+
+  /transactions/rules:
+    get:
+      operationId: listTransactionRules
+      tags: [Rules]
+      summary: List rules
+      responses:
+        '200':
+          description: Rules list
+    post:
+      operationId: createTransactionRule
+      tags: [Rules]
+      summary: Create rule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionRule'
+      responses:
+        '201':
+          description: Rule created
+
+  /transactions/rules/{id}:
+    get:
+      operationId: getTransactionRule
+      tags: [Rules]
+      summary: Get rule
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Rule details
+    put:
+      operationId: updateTransactionRule
+      tags: [Rules]
+      summary: Update rule
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TransactionRule'
+      responses:
+        '200':
+          description: Rule updated
+    delete:
+      operationId: deleteTransactionRule
+      tags: [Rules]
+      summary: Delete rule
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Rule deleted
+
+  /transactions/limits:
+    get:
+      operationId: getLimits
+      tags: [Rules]
+      summary: Get limits
+      responses:
+        '200':
+          description: Transaction limits
+    put:
+      operationId: updateLimits
+      tags: [Rules]
+      summary: Update limits
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Limits updated
+
+  /transactions/analytics/summary:
+    get:
+      operationId: getTransactionSummary
+      tags: [Analytics]
+      summary: Get summary
+      responses:
+        '200':
+          description: Transaction summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionSummary'
+
+  /transactions/analytics/risk-distribution:
+    get:
+      operationId: getRiskDistribution
+      tags: [Analytics]
+      summary: Get risk distribution
+      responses:
+        '200':
+          description: Risk distribution
+
+  /transactions/analytics/fraud-rate:
+    get:
+      operationId: getFraudRate
+      tags: [Analytics]
+      summary: Get fraud rate
+      responses:
+        '200':
+          description: Fraud rate trends
+
+  /transactions/analytics/top-risks:
+    get:
+      operationId: getTopRisks
+      tags: [Analytics]
+      summary: Get top risks
+      responses:
+        '200':
+          description: Top risk patterns
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+
+  schemas:
+    TransactionScoreRequest:
+      type: object
+      required: [amount, currency, type, sender, recipient]
+      properties:
+        transaction_id:
+          type: string
+        amount:
+          type: number
+        currency:
+          type: string
+        type:
+          type: string
+          enum: [p2p_transfer, bill_payment, merchant_payment, cash_withdrawal, bank_transfer, international_transfer]
+        sender:
+          type: object
+          required: [user_id]
+          properties:
+            user_id:
+              type: string
+            account_id:
+              type: string
+            device_id:
+              type: string
+            ip_address:
+              type: string
+        recipient:
+          type: object
+          required: [type, value]
+          properties:
+            type:
+              type: string
+            value:
+              type: string
+            name:
+              type: string
+        context:
+          type: object
+        metadata:
+          type: object
+
+    TransactionScore:
+      type: object
+      properties:
+        id:
+          type: string
+        object:
+          type: string
+        processing_time_ms:
+          type: integer
+        decision:
+          type: string
+          enum: [approve, review, challenge, decline]
+        risk_score:
+          type: integer
+        risk_level:
+          type: string
+        signals:
+          type: object
+          properties:
+            positive:
+              type: array
+              items:
+                type: string
+            negative:
+              type: array
+              items:
+                type: string
+        checks:
+          type: object
+        rules_triggered:
+          type: array
+          items:
+            type: object
+
+    TransactionReport:
+      type: object
+      required: [score_id, outcome]
+      properties:
+        score_id:
+          type: string
+        transaction_id:
+          type: string
+        outcome:
+          type: string
+          enum: [completed, cancelled, declined, reversed, fraud_confirmed, disputed]
+        fraud_reported:
+          type: boolean
+        notes:
+          type: string
+
+    UserProfile:
+      type: object
+      properties:
+        user_id:
+          type: string
+        trust_level:
+          type: string
+        trust_score:
+          type: integer
+        statistics:
+          type: object
+        patterns:
+          type: object
+        risk_factors:
+          type: object
+        known_recipients:
+          type: array
+          items:
+            type: object
+
+    RecipientCheck:
+      type: object
+      properties:
+        id:
+          type: string
+        risk_score:
+          type: integer
+        risk_level:
+          type: string
+        relationship:
+          type: object
+        flags:
+          type: array
+          items:
+            type: string
+
+    TransactionRule:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        condition:
+          type: string
+        action:
+          type: string
+        score_adjustment:
+          type: integer
+        enabled:
+          type: boolean
+
+    TransactionSummary:
+      type: object
+      properties:
+        period:
+          type: string
+        volume:
+          type: object
+        decisions:
+          type: object
+        fraud:
+          type: object

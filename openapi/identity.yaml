@@ -1,0 +1,1223 @@
+openapi: 3.0.3
+info:
+  title: TXCloud Identity API
+  version: "1.0.0"
+  description: |
+    The TXCloud Identity API enables identity verification through document OCR, 
+    face matching, liveness detection, and fraud checks.
+    
+    ## Base URL
+    ```
+    https://api.txcloud.io/v1
+    ```
+    
+    ## Authentication
+    All requests require a Bearer token in the Authorization header:
+    ```
+    Authorization: Bearer txc_live_your_api_key
+    ```
+    
+    ## Rate Limits
+    | Plan | Requests/min |
+    |------|--------------|
+    | Starter | 60 |
+    | Growth | 300 |
+    | Scale | 1,000 |
+    | Enterprise | Custom |
+    
+  termsOfService: https://txcloud.io/terms
+  contact:
+    name: TXCloud API Support
+    email: support@txcloud.io
+    url: https://docs.txcloud.io
+  license:
+    name: Proprietary
+    url: https://txcloud.io/license
+  x-logo:
+    url: https://txcloud.io/logo.png
+
+servers:
+  - url: https://api.txcloud.io/v1
+    description: Production
+  - url: https://sandbox.api.txcloud.io/v1
+    description: Sandbox (test environment)
+
+tags:
+  - name: Verification
+    description: Core identity verification endpoints
+  - name: Management
+    description: Manage and retrieve verifications
+  - name: Sessions
+    description: Multi-step verification sessions
+  - name: Documents
+    description: Document management
+  - name: Configuration
+    description: Supported documents and countries
+
+security:
+  - BearerAuth: []
+
+paths:
+  # ============================================
+  # CORE VERIFICATION
+  # ============================================
+  /identity/verify:
+    post:
+      operationId: createVerification
+      tags: [Verification]
+      summary: Create verification
+      description: |
+        Performs a full identity verification including document OCR, 
+        face matching, liveness detection, and fraud checks.
+        
+        **Checks Available:**
+        - `ocr` - Extract data from document
+        - `face_match` - Compare selfie to document photo
+        - `liveness` - Detect if selfie is a live person
+        - `fraud` - Check for document tampering
+        - `duplicate` - Check for duplicate submissions
+        
+        **Processing Modes:**
+        - `sync` - Wait for results (default, up to 30s)
+        - `async` - Return immediately, results via webhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerificationRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/VerificationRequestMultipart'
+      responses:
+        '200':
+          description: Verification completed (sync mode)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Verification'
+        '201':
+          description: Verification created (async mode)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationPending'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /identity/extract:
+    post:
+      operationId: extractDocument
+      tags: [Verification]
+      summary: Extract document data
+      description: |
+        Extracts data from an identity document using OCR without 
+        performing face matching or liveness checks.
+        
+        Useful for pre-filling forms or document validation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExtractRequest'
+      responses:
+        '200':
+          description: Extraction successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExtractResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+
+  /identity/face-match:
+    post:
+      operationId: matchFaces
+      tags: [Verification]
+      summary: Compare faces
+      description: |
+        Compares two face images and returns a similarity score.
+        
+        **Use Cases:**
+        - Compare selfie to document photo
+        - Compare two selfies
+        - Re-verify returning user
+        
+        **Thresholds:**
+        - ≥0.70 = Match
+        - 0.60-0.69 = Uncertain
+        - <0.60 = No match
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FaceMatchRequest'
+      responses:
+        '200':
+          description: Face comparison result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FaceMatchResponse'
+
+  /identity/liveness:
+    post:
+      operationId: checkLiveness
+      tags: [Verification]
+      summary: Check liveness
+      description: |
+        Detects if a selfie image is of a live person or a spoof attempt.
+        
+        **Detection Modes:**
+        - `passive` - Single image analysis (default)
+        - `active` - Multiple frames with movement
+        
+        **Spoof Types Detected:**
+        - Printed photos
+        - Screen displays
+        - Masks
+        - Deepfakes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LivenessRequest'
+      responses:
+        '200':
+          description: Liveness check result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LivenessResponse'
+
+  /identity/validate:
+    post:
+      operationId: validateDocument
+      tags: [Verification]
+      summary: Pre-validate document
+      description: |
+        Validates document image quality before full verification.
+        
+        Use this to provide immediate feedback to users about 
+        image quality issues before submitting for verification.
+        
+        **Checks:**
+        - Image resolution
+        - Blur detection
+        - Lighting/exposure
+        - Document detection
+        - Document orientation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidateRequest'
+      responses:
+        '200':
+          description: Validation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidateResponse'
+
+  # ============================================
+  # VERIFICATION MANAGEMENT
+  # ============================================
+  /identity/verifications:
+    get:
+      operationId: listVerifications
+      tags: [Management]
+      summary: List verifications
+      description: Returns a paginated list of verifications
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, verified, rejected, review, expired, error]
+        - name: document_type
+          in: query
+          schema:
+            type: string
+        - name: created_after
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: created_before
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: starting_after
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of verifications
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificationList'
+
+  /identity/verifications/{id}:
+    get:
+      operationId: getVerification
+      tags: [Management]
+      summary: Get verification
+      description: Retrieves a verification by ID
+      parameters:
+        - $ref: '#/components/parameters/VerificationId'
+      responses:
+        '200':
+          description: Verification details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Verification'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    
+    delete:
+      operationId: deleteVerification
+      tags: [Management]
+      summary: Delete verification
+      description: |
+        Permanently deletes a verification and associated data.
+        
+        Use for GDPR/CNDP compliance when users request data deletion.
+        
+        **Note:** This action is irreversible.
+      parameters:
+        - $ref: '#/components/parameters/VerificationId'
+      responses:
+        '200':
+          description: Verification deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                  object:
+                    type: string
+                    enum: [verification]
+                  deleted:
+                    type: boolean
+                    example: true
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /identity/verifications/{id}/retry:
+    post:
+      operationId: retryVerification
+      tags: [Management]
+      summary: Retry verification
+      description: |
+        Retries a failed verification with optional new images.
+        
+        Only available for verifications with status `error` or `rejected`.
+      parameters:
+        - $ref: '#/components/parameters/VerificationId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                document_front:
+                  type: string
+                  format: byte
+                document_back:
+                  type: string
+                  format: byte
+                selfie:
+                  type: string
+                  format: byte
+      responses:
+        '200':
+          description: Retry initiated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Verification'
+
+  /identity/verifications/{id}/cancel:
+    post:
+      operationId: cancelVerification
+      tags: [Management]
+      summary: Cancel verification
+      description: Cancels a pending async verification
+      parameters:
+        - $ref: '#/components/parameters/VerificationId'
+      responses:
+        '200':
+          description: Verification cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Verification'
+
+  /identity/verifications/{id}/audit:
+    get:
+      operationId: getVerificationAudit
+      tags: [Management]
+      summary: Get audit trail
+      description: |
+        Returns the complete audit trail for a verification.
+        
+        Use for compliance and investigation purposes.
+      parameters:
+        - $ref: '#/components/parameters/VerificationId'
+      responses:
+        '200':
+          description: Audit trail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditTrail'
+
+  # ============================================
+  # SESSIONS
+  # ============================================
+  /identity/sessions:
+    post:
+      operationId: createSession
+      tags: [Sessions]
+      summary: Create session
+      description: |
+        Creates a verification session for multi-step document upload.
+        
+        Sessions expire after 15 minutes of inactivity.
+        
+        **Flow:**
+        1. Create session
+        2. Upload document front
+        3. Upload document back (if required)
+        4. Upload selfie
+        5. Complete session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionRequest'
+      responses:
+        '201':
+          description: Session created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+
+  /identity/sessions/{id}:
+    get:
+      operationId: getSession
+      tags: [Sessions]
+      summary: Get session
+      description: Retrieves session status and uploaded documents
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+      responses:
+        '200':
+          description: Session details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+
+  /identity/sessions/{id}/documents:
+    post:
+      operationId: uploadSessionDocument
+      tags: [Sessions]
+      summary: Upload document to session
+      description: Uploads a document image to an existing session
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SessionDocumentUpload'
+      responses:
+        '200':
+          description: Document uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+
+  /identity/sessions/{id}/complete:
+    post:
+      operationId: completeSession
+      tags: [Sessions]
+      summary: Complete session
+      description: |
+        Completes the session and triggers verification.
+        
+        All required documents must be uploaded before completing.
+      parameters:
+        - $ref: '#/components/parameters/SessionId'
+      responses:
+        '200':
+          description: Verification started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Verification'
+
+  # ============================================
+  # DOCUMENTS
+  # ============================================
+  /identity/documents/{id}:
+    get:
+      operationId: getDocument
+      tags: [Documents]
+      summary: Get document metadata
+      description: Retrieves metadata for a stored document
+      parameters:
+        - $ref: '#/components/parameters/DocumentId'
+      responses:
+        '200':
+          description: Document metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Document'
+
+  /identity/documents/{id}/download:
+    get:
+      operationId: downloadDocument
+      tags: [Documents]
+      summary: Download document
+      description: |
+        Returns a signed URL to download the document image.
+        
+        URL is valid for 30 minutes.
+      parameters:
+        - $ref: '#/components/parameters/DocumentId'
+      responses:
+        '200':
+          description: Download URL
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url:
+                    type: string
+                    format: uri
+                  expires_at:
+                    type: string
+                    format: date-time
+
+  # ============================================
+  # CONFIGURATION
+  # ============================================
+  /identity/supported-documents:
+    get:
+      operationId: listSupportedDocuments
+      tags: [Configuration]
+      summary: List supported documents
+      description: Lists all supported document types
+      parameters:
+        - name: country
+          in: query
+          schema:
+            type: string
+          description: Filter by country code
+      responses:
+        '200':
+          description: Supported documents
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupportedDocuments'
+
+  /identity/countries:
+    get:
+      operationId: listCountries
+      tags: [Configuration]
+      summary: List supported countries
+      description: Lists all supported countries and their document types
+      responses:
+        '200':
+          description: Supported countries
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SupportedCountries'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: API key as Bearer token
+
+  parameters:
+    VerificationId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Verification ID
+      example: "ver_a1b2c3d4e5f6"
+
+    SessionId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Session ID
+      example: "sess_a1b2c3d4e5f6"
+
+    DocumentId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Document ID
+      example: "doc_a1b2c3d4e5f6"
+
+  schemas:
+    # --- Verification Request/Response ---
+    VerificationRequest:
+      type: object
+      required:
+        - document_front
+        - document_type
+        - country
+      properties:
+        document_front:
+          type: string
+          format: byte
+          description: Base64 encoded front of document
+        document_back:
+          type: string
+          format: byte
+          description: Base64 encoded back of document
+        selfie:
+          type: string
+          format: byte
+          description: Base64 encoded selfie image
+        document_type:
+          type: string
+          enum: [cin, cni, passport, permit, residence_card]
+        country:
+          type: string
+          pattern: "^[A-Z]{2}$"
+          example: "MA"
+        checks:
+          type: array
+          items:
+            type: string
+            enum: [ocr, face_match, liveness, fraud, duplicate]
+          default: [ocr, face_match, liveness, fraud]
+        mode:
+          type: string
+          enum: [sync, async]
+          default: sync
+        webhook_url:
+          type: string
+          format: uri
+          description: Webhook URL for async results
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Custom metadata
+
+    VerificationRequestMultipart:
+      type: object
+      required:
+        - document_front
+        - document_type
+        - country
+      properties:
+        document_front:
+          type: string
+          format: binary
+        document_back:
+          type: string
+          format: binary
+        selfie:
+          type: string
+          format: binary
+        document_type:
+          type: string
+        country:
+          type: string
+
+    Verification:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "ver_a1b2c3d4e5f6"
+        object:
+          type: string
+          enum: [identity.verification]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [pending, verified, rejected, review, expired, error]
+        document_type:
+          type: string
+        country:
+          type: string
+        extracted_data:
+          $ref: '#/components/schemas/ExtractedData'
+        checks:
+          $ref: '#/components/schemas/VerificationChecks'
+        risk_score:
+          type: integer
+          minimum: 0
+          maximum: 1000
+        risk_level:
+          type: string
+          enum: [low, medium, high, critical]
+        fraud_signals:
+          type: array
+          items:
+            $ref: '#/components/schemas/FraudSignal'
+        metadata:
+          type: object
+
+    VerificationPending:
+      type: object
+      properties:
+        id:
+          type: string
+        object:
+          type: string
+          enum: [identity.verification]
+        status:
+          type: string
+          enum: [pending]
+        created_at:
+          type: string
+          format: date-time
+
+    VerificationList:
+      type: object
+      properties:
+        object:
+          type: string
+          enum: [list]
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Verification'
+        has_more:
+          type: boolean
+        total_count:
+          type: integer
+
+    VerificationChecks:
+      type: object
+      properties:
+        ocr:
+          $ref: '#/components/schemas/CheckResult'
+        face_match:
+          $ref: '#/components/schemas/FaceMatchCheck'
+        liveness:
+          $ref: '#/components/schemas/LivenessCheck'
+        fraud:
+          $ref: '#/components/schemas/FraudCheck'
+        duplicate:
+          $ref: '#/components/schemas/CheckResult'
+
+    CheckResult:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [passed, failed, skipped, error]
+        confidence:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+
+    FaceMatchCheck:
+      allOf:
+        - $ref: '#/components/schemas/CheckResult'
+        - type: object
+          properties:
+            similarity_score:
+              type: number
+              format: float
+            threshold:
+              type: number
+              format: float
+
+    LivenessCheck:
+      allOf:
+        - $ref: '#/components/schemas/CheckResult'
+        - type: object
+          properties:
+            is_live:
+              type: boolean
+            spoof_probability:
+              type: number
+              format: float
+
+    FraudCheck:
+      allOf:
+        - $ref: '#/components/schemas/CheckResult'
+        - type: object
+          properties:
+            tampering_detected:
+              type: boolean
+            signals:
+              type: array
+              items:
+                type: string
+
+    ExtractedData:
+      type: object
+      properties:
+        document_number:
+          type: string
+          example: "AE123456"
+        first_name:
+          type: string
+          example: "Mohammed"
+        last_name:
+          type: string
+          example: "El Amrani"
+        first_name_arabic:
+          type: string
+        last_name_arabic:
+          type: string
+        date_of_birth:
+          type: string
+          format: date
+        gender:
+          type: string
+          enum: [M, F]
+        nationality:
+          type: string
+        issue_date:
+          type: string
+          format: date
+        expiry_date:
+          type: string
+          format: date
+        address:
+          type: string
+        place_of_birth:
+          type: string
+        mrz:
+          type: string
+        field_confidences:
+          type: object
+          additionalProperties:
+            type: number
+
+    FraudSignal:
+      type: object
+      properties:
+        code:
+          type: string
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+        message:
+          type: string
+
+    # --- Extract ---
+    ExtractRequest:
+      type: object
+      required:
+        - document_front
+        - document_type
+        - country
+      properties:
+        document_front:
+          type: string
+          format: byte
+        document_back:
+          type: string
+          format: byte
+        document_type:
+          type: string
+        country:
+          type: string
+
+    ExtractResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        object:
+          type: string
+          enum: [identity.extraction]
+        extracted_data:
+          $ref: '#/components/schemas/ExtractedData'
+        field_confidences:
+          type: object
+        quality_score:
+          type: number
+
+    # --- Face Match ---
+    FaceMatchRequest:
+      type: object
+      required:
+        - image_1
+        - image_2
+      properties:
+        image_1:
+          type: string
+          format: byte
+          description: First face image (base64)
+        image_2:
+          type: string
+          format: byte
+          description: Second face image (base64)
+
+    FaceMatchResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        object:
+          type: string
+          enum: [identity.face_match]
+        match:
+          type: boolean
+        similarity_score:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+        threshold:
+          type: number
+        confidence:
+          type: number
+
+    # --- Liveness ---
+    LivenessRequest:
+      type: object
+      required:
+        - image
+      properties:
+        image:
+          type: string
+          format: byte
+        mode:
+          type: string
+          enum: [passive, active]
+          default: passive
+        frames:
+          type: array
+          items:
+            type: string
+            format: byte
+          description: Additional frames for active mode
+
+    LivenessResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        object:
+          type: string
+          enum: [identity.liveness]
+        is_live:
+          type: boolean
+        confidence:
+          type: number
+        spoof_probability:
+          type: number
+        spoof_type:
+          type: string
+          enum: [none, photo, screen, mask, deepfake]
+        signals:
+          type: array
+          items:
+            type: string
+
+    # --- Validate ---
+    ValidateRequest:
+      type: object
+      required:
+        - image
+      properties:
+        image:
+          type: string
+          format: byte
+        side:
+          type: string
+          enum: [front, back]
+
+    ValidateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        valid:
+          type: boolean
+        quality_score:
+          type: number
+        issues:
+          type: array
+          items:
+            type: object
+            properties:
+              code:
+                type: string
+              message:
+                type: string
+              severity:
+                type: string
+        recommendations:
+          type: array
+          items:
+            type: string
+
+    # --- Sessions ---
+    SessionRequest:
+      type: object
+      required:
+        - document_type
+        - country
+      properties:
+        document_type:
+          type: string
+        country:
+          type: string
+        checks:
+          type: array
+          items:
+            type: string
+        metadata:
+          type: object
+
+    Session:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "sess_a1b2c3d4e5f6"
+        object:
+          type: string
+          enum: [identity.session]
+        status:
+          type: string
+          enum: [pending, ready, completed, expired]
+        document_type:
+          type: string
+        country:
+          type: string
+        documents:
+          type: array
+          items:
+            type: object
+            properties:
+              side:
+                type: string
+              uploaded:
+                type: boolean
+              quality_score:
+                type: number
+        selfie_uploaded:
+          type: boolean
+        expires_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+
+    SessionDocumentUpload:
+      type: object
+      required:
+        - side
+        - image
+      properties:
+        side:
+          type: string
+          enum: [front, back, selfie]
+        image:
+          type: string
+          format: byte
+
+    # --- Documents ---
+    Document:
+      type: object
+      properties:
+        id:
+          type: string
+        object:
+          type: string
+          enum: [identity.document]
+        type:
+          type: string
+        side:
+          type: string
+        format:
+          type: string
+        size_bytes:
+          type: integer
+        quality_score:
+          type: number
+        uploaded_at:
+          type: string
+          format: date-time
+
+    # --- Audit ---
+    AuditTrail:
+      type: object
+      properties:
+        verification_id:
+          type: string
+        events:
+          type: array
+          items:
+            type: object
+            properties:
+              timestamp:
+                type: string
+                format: date-time
+              event:
+                type: string
+              actor:
+                type: string
+              details:
+                type: object
+
+    # --- Configuration ---
+    SupportedDocuments:
+      type: object
+      properties:
+        object:
+          type: string
+          enum: [list]
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+              name:
+                type: string
+              countries:
+                type: array
+                items:
+                  type: string
+              sides_required:
+                type: array
+                items:
+                  type: string
+
+    SupportedCountries:
+      type: object
+      properties:
+        object:
+          type: string
+          enum: [list]
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              code:
+                type: string
+              name:
+                type: string
+              status:
+                type: string
+                enum: [full_support, beta, coming_soon]
+              document_types:
+                type: array
+                items:
+                  type: string
+
+  responses:
+    BadRequest:
+      description: Bad Request
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  message:
+                    type: string
+                  type:
+                    type: string
+
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: object
+
+    NotFound:
+      description: Not Found
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: object
+
+    UnprocessableEntity:
+      description: Unprocessable Entity
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: object
+
+    RateLimited:
+      description: Rate Limited
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: object

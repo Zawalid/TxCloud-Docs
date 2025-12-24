@@ -1,0 +1,75 @@
+---
+title: "KYB API"
+sidebarTitle: "Overview"
+description: "Business verification with company data, UBO identification, and director checks"
+icon: "building"
+---
+
+The KYB (Know Your Business) API enables comprehensive business verification across MENA and Africa.
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Company Search" icon="magnifying-glass">
+    Search business registries across 50+ countries
+  </Card>
+  <Card title="UBO Discovery" icon="users">
+    Identify Ultimate Beneficial Owners
+  </Card>
+  <Card title="Director Verification" icon="user-tie">
+    Verify directors and authorized signatories
+  </Card>
+  <Card title="Document Retrieval" icon="file-certificate">
+    Retrieve official company documents
+  </Card>
+</CardGroup>
+
+## Base URL
+
+```
+https://api.txcloud.io/v1/kyb
+```
+
+For testing, use the sandbox environment:
+
+```
+https://sandbox.api.txcloud.io/v1/kyb
+```
+
+## Authentication
+
+All requests require a Bearer token:
+
+```bash
+curl https://api.txcloud.io/v1/kyb/companies/search \
+  -H "Authorization: Bearer txc_live_your_api_key"
+```
+
+## Quick Start
+
+```javascript
+import TXCloud from '@txcloud/sdk';
+
+const txcloud = new TXCloud('your_api_key');
+
+const company = await txcloud.kyb.verify({
+  company_name: 'TXCloud Technologies',
+  registration_number: 'RC123456',
+  country: 'MA',
+  checks: ['registry', 'ubo', 'directors']
+});
+
+console.log(company.status); // 'verified'
+console.log(company.ubos); // [{ name: '...', ownership: 51 }]
+```
+
+## Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/kyb/verify` | Verify a business |
+| GET | `/kyb/companies/search` | Search companies |
+| GET | `/kyb/companies/{id}` | Get company details |
+| GET | `/kyb/companies/{id}/ubos` | Get UBOs |
+| GET | `/kyb/companies/{id}/directors` | Get directors |
+| GET | `/kyb/companies/{id}/documents` | Get documents |

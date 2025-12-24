@@ -1,0 +1,180 @@
+---
+title: "Rate Limits"
+sidebarTitle: "Rate Limits"
+description: "Understand TXCloud API rate limits and how to handle them"
+icon: "gauge-high"
+---
+
+## Overview
+
+TXCloud implements rate limiting to ensure fair usage and maintain API stability. Rate limits vary by plan and endpoint type.
+
+## Rate Limit Tiers
+
+| Plan | Requests/Minute | Requests/Day | Burst Limit |
+|------|-----------------|--------------|-------------|
+| **Free** | 60 | 1,000 | 10 |
+| **Starter** | 300 | 10,000 | 50 |
+| **Growth** | 1,000 | 100,000 | 100 |
+| **Enterprise** | Custom | Custom | Custom |
+
+<Note>
+  **Burst limit** is the maximum number of concurrent requests allowed.
+</Note>
+
+## Endpoint-Specific Limits
+
+Some endpoints have additional limits:
+
+| Endpoint | Limit | Window |
+|----------|-------|--------|
+| `POST /identity/verify` | 100/min | Per API key |
+| `POST /transactions/score` | 1,000/min | Per API key |
+| `POST /watchlist/screen` | 500/min | Per API key |
+| `GET /*/analytics/*` | 30/min | Per API key |
+
+## Rate Limit Headers
+
+Every API response includes rate limit information in the headers:
+
+```http
+HTTP/1.1 200 OK
+X-RateLimit-Limit: 1000
+X-RateLimit-Remaining: 950
+X-RateLimit-Reset: 1705312800
+X-RateLimit-Window: 60
+```
+
+| Header | Description |
+|--------|-------------|
+| `X-RateLimit-Limit` | Maximum requests allowed in the window |
+| `X-RateLimit-Remaining` | Requests remaining in current window |
+| `X-RateLimit-Reset` | Unix timestamp when the window resets |
+| `X-RateLimit-Window` | Window duration in seconds |
+
+## Handling Rate Limits
+
+When you exceed the rate limit, you'll receive a `429 Too Many Requests` response:
+
+```json
+{
+  "error": {
+    "code": "rate_limit_exceeded",
+    "message": "Too many requests. Please retry after 30 seconds.",
+    "type": "rate_limit_error",
+    "retry_after": 30
+  }
+}
+```
+
+### Implementing Retry Logic
+
+<CodeGroup>
+```javascript JavaScript
+async function makeRequestWithRetry(fn, maxRetries = 3) {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      if (error.status === 429 && attempt < maxRetries - 1) {
+        const retryAfter = error.headers['retry-after'] || 30;
+        console.log(`Rate limited. Retrying in ${retryAfter}s...`);
+        await sleep(retryAfter * 1000);
+        continue;
+      }
+      throw error;
+    }
+  }
+}
+
+// Usage
+const verification = await makeRequestWithRetry(() => 
+  txcloud.identity.verify({ ... })
+);
+```
+
+```python Python
+import time
+from txcloud.exceptions import RateLimitError
+
+def make_request_with_retry(fn, max_retries=3):
+    for attempt in range(max_retries):
+        try:
+            return fn()
+        except RateLimitError as e:
+            if attempt < max_retries - 1:
+                retry_after = e.retry_after or 30
+                print(f"Rate limited. Retrying in {retry_after}s...")
+                time.sleep(retry_after)
+                continue
+            raise
+
+# Usage
+verification = make_request_with_retry(
+    lambda: txcloud.identity.verify(...)
+)
+```
+</CodeGroup>
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Implement Exponential Backoff" icon="clock-rotate-left">
+    Use exponential backoff for retries:
+    ```javascript
+    const delay = Math.min(1000 * Math.pow(2, attempt), 30000);
+    await sleep(delay);
+    ```
+  </Accordion>
+  
+  <Accordion title="Use Caching" icon="memory">
+    Cache responses when possible to reduce API calls:
+    - Cache verification results by ID
+    - Cache user risk profiles
+    - Cache configuration data
+  </Accordion>
+  
+  <Accordion title="Batch Requests" icon="layer-group">
+    Use batch endpoints when available:
+    ```javascript
+    // Instead of multiple single calls
+    await txcloud.watchlist.screenBatch({
+      entities: [entity1, entity2, entity3]
+    });
+    ```
+  </Accordion>
+  
+  <Accordion title="Monitor Usage" icon="chart-line">
+    Track your API usage in the dashboard to predict rate limit issues.
+  </Accordion>
+</AccordionGroup>
+
+## Increasing Your Limits
+
+Need higher rate limits? Options include:
+
+1. **Upgrade your plan** — Higher plans have higher limits
+2. **Request a limit increase** — Contact sales for custom limits
+3. **Optimize your integration** — Reduce unnecessary calls
+
+<Card title="Contact Sales" icon="phone" href="mailto:sales@txcloud.io">
+  Discuss custom rate limits for enterprise needs
+</Card>
+
+## Monitoring Usage
+
+Track your API usage in the dashboard:
+
+```javascript
+// Get your current usage
+const usage = await txcloud.developers.usage.summary({
+  period: '30d'
+});
+
+console.log('Total requests:', usage.total_requests);
+console.log('Rate limit hits:', usage.rate_limit_hits);
+```
+
+<Tip>
+  Set up alerts in your dashboard to get notified when you're approaching rate limits.
+</Tip>

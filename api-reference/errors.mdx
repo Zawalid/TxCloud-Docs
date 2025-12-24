@@ -1,0 +1,46 @@
+---
+title: "API Errors"
+sidebarTitle: "Errors"
+description: "Error handling in the TXCloud API"
+---
+
+## Error Format
+
+```json
+{
+  "error": {
+    "code": "invalid_request",
+    "message": "Document image is required",
+    "type": "validation_error",
+    "param": "document_front",
+    "request_id": "req_a1b2c3d4"
+  }
+}
+```
+
+## HTTP Status Codes
+
+| Status | Description |
+|--------|-------------|
+| 200 | Success |
+| 201 | Created |
+| 400 | Bad Request |
+| 401 | Unauthorized |
+| 403 | Forbidden |
+| 404 | Not Found |
+| 429 | Rate Limited |
+| 500 | Server Error |
+
+## Error Types
+
+| Type | Description |
+|------|-------------|
+| `validation_error` | Invalid request parameters |
+| `authentication_error` | Invalid or missing API key |
+| `rate_limit_error` | Too many requests |
+| `not_found_error` | Resource not found |
+| `api_error` | Internal server error |
+
+<Card title="Full Error Reference" icon="triangle-exclamation" href="/resources/error-codes">
+  View all error codes
+</Card>

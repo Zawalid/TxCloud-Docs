@@ -1,0 +1,75 @@
+---
+title: "LendingRisk API"
+sidebarTitle: "Overview"
+description: "Credit risk assessment with income verification and affordability analysis"
+icon: "chart-line"
+---
+
+The LendingRisk API provides comprehensive credit assessment using alternative data sources tailored for emerging markets.
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Credit Scoring" icon="calculator">
+    Alternative credit scores for thin-file customers
+  </Card>
+  <Card title="Income Verification" icon="money-bill-wave">
+    Verify income from bank statements and payslips
+  </Card>
+  <Card title="Affordability" icon="scale-balanced">
+    Calculate debt-to-income and affordability metrics
+  </Card>
+  <Card title="Risk Indicators" icon="triangle-exclamation">
+    Identify financial stress signals
+  </Card>
+</CardGroup>
+
+## Base URL
+
+```
+https://api.txcloud.io/v1/lending
+```
+
+For testing, use the sandbox environment:
+
+```
+https://sandbox.api.txcloud.io/v1/lending
+```
+
+## Authentication
+
+All requests require a Bearer token:
+
+```bash
+curl https://api.txcloud.io/v1/lending/assess \
+  -H "Authorization: Bearer txc_live_your_api_key"
+```
+
+## Quick Start
+
+```javascript
+import TXCloud from '@txcloud/sdk';
+
+const txcloud = new TXCloud('your_api_key');
+
+const assessment = await txcloud.lending.assess({
+  applicant_id: 'app_123',
+  loan_amount: 50000,
+  loan_term_months: 12,
+  bank_statements: ['base64_statement...'],
+  purpose: 'personal'
+});
+
+console.log(assessment.credit_score); // 720
+console.log(assessment.recommendation); // 'approve'
+```
+
+## Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/lending/assess` | Create credit assessment |
+| POST | `/lending/income/verify` | Verify income |
+| POST | `/lending/affordability` | Calculate affordability |
+| GET | `/lending/assessments/{id}` | Get assessment details |
+| GET | `/lending/assessments` | List assessments |

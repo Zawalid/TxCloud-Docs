@@ -1,0 +1,244 @@
+---
+title: "Authentication"
+sidebarTitle: "Authentication"
+description: "Learn how to authenticate your API requests"
+icon: "key"
+---
+
+## Overview
+
+TXCloud uses **API keys** to authenticate requests. All API requests must include your API key in the `Authorization` header using Bearer token authentication.
+
+```bash
+Authorization: Bearer txc_live_your_api_key_here
+```
+
+## API Key Types
+
+TXCloud provides two types of API keys:
+
+| Type | Prefix | Use Case |
+|------|--------|----------|
+| **Test/Sandbox** | `txc_test_` | Development and testing |
+| **Live/Production** | `txc_live_` | Production applications |
+
+<Warning>
+  **Never expose your API keys in client-side code.** API keys should only be used in server-side applications.
+</Warning>
+
+## Getting Your API Key
+
+<Steps>
+  <Step title="Log in to Dashboard">
+    Go to [dashboard.txcloud.io](https://dashboard.txcloud.io) and sign in.
+  </Step>
+  <Step title="Navigate to API Keys">
+    Click on **Settings** in the sidebar, then select **API Keys**.
+  </Step>
+  <Step title="Create New Key">
+    Click **Create API Key** and configure:
+    - **Name**: A descriptive name (e.g., "Production Server")
+    - **Environment**: Test or Live
+    - **Permissions**: Select which APIs the key can access
+    - **IP Whitelist**: (Optional) Restrict to specific IPs
+  </Step>
+  <Step title="Copy Your Key">
+    Copy the key immediately — it won't be shown again!
+  </Step>
+</Steps>
+
+## Making Authenticated Requests
+
+<CodeGroup>
+```javascript JavaScript
+import TXCloud from '@txcloud/sdk';
+
+// The SDK handles authentication automatically
+const txcloud = new TXCloud({
+  apiKey: process.env.TXCLOUD_API_KEY
+});
+
+// All requests are automatically authenticated
+const verification = await txcloud.identity.verify({
+  document_front: '...',
+  country: 'MA'
+});
+```
+
+```python Python
+from txcloud import TXCloud
+import os
+
+# Initialize with your API key
+txcloud = TXCloud(api_key=os.environ.get("TXCLOUD_API_KEY"))
+
+# All requests are automatically authenticated
+verification = txcloud.identity.verify(
+    document_front="...",
+    country="MA"
+)
+```
+
+```bash cURL
+# Include the Authorization header in every request
+curl -X POST https://api.txcloud.io/v1/identity/verify \
+  -H "Authorization: Bearer txc_live_your_api_key" \
+  -H "Content-Type: application/json" \
+  -d '{"document_front": "...", "country": "MA"}'
+```
+
+```go Go
+import "github.com/txcloud/txcloud-go"
+
+client := txcloud.NewClient(os.Getenv("TXCLOUD_API_KEY"))
+
+verification, err := client.Identity.Verify(&txcloud.VerifyRequest{
+    DocumentFront: "...",
+    Country: "MA",
+})
+```
+</CodeGroup>
+
+## API Key Permissions
+
+When creating an API key, you can restrict access to specific APIs:
+
+| Permission | Description |
+|------------|-------------|
+| `identity:read` | Read verification results |
+| `identity:write` | Create new verifications |
+| `fraud:read` | Read fraud signals and analytics |
+| `fraud:write` | Configure fraud rules and blocklists |
+| `transactions:read` | Read transaction scores |
+| `transactions:write` | Score transactions, update rules |
+| `lending:read` | Read credit assessments |
+| `lending:write` | Create assessments, upload statements |
+| `kyb:read` | Read business verifications |
+| `kyb:write` | Create business verifications |
+| `watchlist:read` | Read screening results |
+| `watchlist:write` | Screen entities, manage lists |
+| `developers:read` | Read API usage and logs |
+| `developers:write` | Manage webhooks and settings |
+
+<Tip>
+  Follow the **principle of least privilege** — only grant the permissions each key needs.
+</Tip>
+
+## IP Whitelisting
+
+For additional security, you can restrict API keys to specific IP addresses:
+
+```json
+{
+  "name": "Production API Key",
+  "allowed_ips": [
+    "203.0.113.50",
+    "203.0.113.51",
+    "10.0.0.0/8"  // CIDR notation supported
+  ]
+}
+```
+
+<Note>
+  IP whitelisting is optional but recommended for production keys.
+</Note>
+
+## Key Rotation
+
+We recommend rotating your API keys periodically:
+
+<Steps>
+  <Step title="Create New Key">
+    Create a new API key with the same permissions.
+  </Step>
+  <Step title="Update Your Application">
+    Deploy the new key to your application.
+  </Step>
+  <Step title="Verify New Key Works">
+    Confirm requests are succeeding with the new key.
+  </Step>
+  <Step title="Revoke Old Key">
+    Delete the old API key from the dashboard.
+  </Step>
+</Steps>
+
+<Warning>
+  Revoking a key is immediate and irreversible. Ensure you've updated all applications first.
+</Warning>
+
+## Required Headers
+
+Every API request should include these headers:
+
+| Header | Required | Description |
+|--------|----------|-------------|
+| `Authorization` | Yes | Bearer token with your API key |
+| `Content-Type` | Yes (POST/PUT) | `application/json` |
+| `Idempotency-Key` | Recommended | Unique key for safe retries |
+| `X-Request-ID` | Optional | Your request ID for tracing |
+
+```bash
+curl -X POST https://api.txcloud.io/v1/identity/verify \
+  -H "Authorization: Bearer txc_live_xxx" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: unique-request-id-123" \
+  -H "X-Request-ID: my-trace-id-456" \
+  -d '{"document_front": "..."}'
+```
+
+## Authentication Errors
+
+| Error Code | HTTP Status | Description |
+|------------|-------------|-------------|
+| `unauthorized` | 401 | Missing or invalid API key |
+| `forbidden` | 403 | Key lacks required permissions |
+| `ip_not_allowed` | 403 | Request from non-whitelisted IP |
+| `key_revoked` | 401 | API key has been revoked |
+| `key_expired` | 401 | API key has expired |
+
+### Error Response Example
+
+```json
+{
+  "error": {
+    "code": "unauthorized",
+    "message": "Invalid API key provided",
+    "type": "authentication_error",
+    "request_id": "req_a1b2c3d4"
+  }
+}
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Use Environment Variables" icon="leaf">
+    Store API keys in environment variables, not in code:
+    ```bash
+    export TXCLOUD_API_KEY="txc_live_xxx"
+    ```
+  </Accordion>
+  <Accordion title="Use Different Keys per Environment" icon="layer-group">
+    Create separate keys for development, staging, and production.
+  </Accordion>
+  <Accordion title="Monitor Key Usage" icon="chart-simple">
+    Check the dashboard regularly for unusual activity.
+  </Accordion>
+  <Accordion title="Enable IP Whitelisting" icon="shield">
+    Restrict production keys to known server IPs.
+  </Accordion>
+  <Accordion title="Rotate Keys Regularly" icon="rotate">
+    Rotate production keys every 90 days.
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Rate Limits" icon="gauge-high" href="/rate-limits">
+    Understand API rate limits
+  </Card>
+  <Card title="Error Handling" icon="triangle-exclamation" href="/resources/error-codes">
+    Handle errors gracefully
+  </Card>
+</CardGroup>

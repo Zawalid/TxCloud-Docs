@@ -1,0 +1,130 @@
+---
+title: "Error Codes"
+sidebarTitle: "Error Codes"
+description: "Complete reference of TXCloud error codes"
+icon: "triangle-exclamation"
+---
+
+## Error Response Format
+
+```json
+{
+  "error": {
+    "code": "invalid_document",
+    "message": "The document image could not be processed",
+    "type": "validation_error",
+    "param": "document_front",
+    "request_id": "req_a1b2c3d4"
+  }
+}
+```
+
+## HTTP Status Codes
+
+| Status | Description |
+|--------|-------------|
+| `200` | Success |
+| `201` | Created |
+| `400` | Bad Request - Invalid parameters |
+| `401` | Unauthorized - Invalid API key |
+| `403` | Forbidden - Insufficient permissions |
+| `404` | Not Found - Resource doesn't exist |
+| `409` | Conflict - Resource already exists |
+| `429` | Too Many Requests - Rate limited |
+| `500` | Server Error - Something went wrong |
+
+## Error Types
+
+| Type | Description |
+|------|-------------|
+| `validation_error` | Invalid request parameters |
+| `authentication_error` | API key issues |
+| `authorization_error` | Permission issues |
+| `not_found_error` | Resource not found |
+| `rate_limit_error` | Rate limit exceeded |
+| `idempotency_error` | Idempotency key conflict |
+| `api_error` | Internal server error |
+
+## Common Error Codes
+
+### Authentication Errors
+
+| Code | Description |
+|------|-------------|
+| `unauthorized` | Missing or invalid API key |
+| `forbidden` | API key lacks required permissions |
+| `key_revoked` | API key has been revoked |
+| `ip_not_allowed` | Request from non-whitelisted IP |
+
+### Validation Errors
+
+| Code | Description |
+|------|-------------|
+| `invalid_request` | Request body is malformed |
+| `missing_parameter` | Required parameter is missing |
+| `invalid_parameter` | Parameter value is invalid |
+| `invalid_document` | Document image cannot be processed |
+| `unsupported_country` | Country not supported |
+| `unsupported_document` | Document type not supported |
+
+### Identity Errors
+
+| Code | Description |
+|------|-------------|
+| `document_expired` | Document has expired |
+| `document_unreadable` | Cannot extract data from document |
+| `face_not_detected` | No face found in image |
+| `face_mismatch` | Selfie doesn't match document |
+| `liveness_failed` | Liveness check failed |
+| `fraud_detected` | Document tampering detected |
+
+### Transaction Errors
+
+| Code | Description |
+|------|-------------|
+| `transaction_declined` | Transaction was declined |
+| `velocity_exceeded` | Rate limit exceeded |
+| `recipient_blocked` | Recipient is blocklisted |
+| `amount_exceeded` | Amount exceeds limits |
+
+### Rate Limit Errors
+
+| Code | Description |
+|------|-------------|
+| `rate_limit_exceeded` | Too many requests |
+
+Response includes `retry_after` field:
+
+```json
+{
+  "error": {
+    "code": "rate_limit_exceeded",
+    "message": "Rate limit exceeded",
+    "retry_after": 30
+  }
+}
+```
+
+## Handling Errors
+
+```javascript
+try {
+  const result = await txcloud.identity.verify({ ... });
+} catch (error) {
+  switch (error.code) {
+    case 'invalid_document':
+      // Ask user to retake photo
+      break;
+    case 'face_mismatch':
+      // Ask user for new selfie
+      break;
+    case 'rate_limit_exceeded':
+      // Wait and retry
+      await sleep(error.retryAfter * 1000);
+      break;
+    default:
+      // Log and show generic error
+      console.error('API error:', error);
+  }
+}
+```

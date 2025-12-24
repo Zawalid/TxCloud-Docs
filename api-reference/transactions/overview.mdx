@@ -1,0 +1,78 @@
+---
+title: "TransactionGuard API"
+sidebarTitle: "Overview"
+description: "Real-time transaction monitoring and payment fraud prevention"
+icon: "credit-card"
+---
+
+The TransactionGuard API provides real-time transaction scoring and monitoring to prevent payment fraud.
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Real-time Scoring" icon="bolt">
+    Sub-50ms response times for transaction decisions
+  </Card>
+  <Card title="Pattern Analysis" icon="chart-line">
+    ML-powered detection of fraudulent patterns
+  </Card>
+  <Card title="Rule Engine" icon="gears">
+    Customizable rules for your business logic
+  </Card>
+  <Card title="Case Management" icon="folder-open">
+    Review and manage flagged transactions
+  </Card>
+</CardGroup>
+
+## Base URL
+
+```
+https://api.txcloud.io/v1/transactions
+```
+
+For testing, use the sandbox environment:
+
+```
+https://sandbox.api.txcloud.io/v1/transactions
+```
+
+## Authentication
+
+All requests require a Bearer token:
+
+```bash
+curl https://api.txcloud.io/v1/transactions/score \
+  -H "Authorization: Bearer txc_live_your_api_key"
+```
+
+## Quick Start
+
+```javascript
+import TXCloud from '@txcloud/sdk';
+
+const txcloud = new TXCloud('your_api_key');
+
+const result = await txcloud.transactions.score({
+  transaction_id: 'txn_123',
+  amount: 1500.00,
+  currency: 'MAD',
+  user_id: 'user_456',
+  payment_method: 'card',
+  card: {
+    bin: '411111',
+    last_four: '1234'
+  }
+});
+
+console.log(result.decision); // 'approve'
+```
+
+## Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/transactions/score` | Score a transaction |
+| GET | `/transactions/{id}` | Get transaction details |
+| GET | `/transactions` | List transactions |
+| POST | `/transactions/{id}/review` | Submit review decision |
+| GET | `/transactions/rules` | List scoring rules |

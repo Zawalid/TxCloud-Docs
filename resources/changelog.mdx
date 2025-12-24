@@ -1,0 +1,54 @@
+---
+title: "Changelog"
+sidebarTitle: "Changelog"
+description: "TXCloud API updates and changes"
+icon: "clock-rotate-left"
+---
+
+## 2025
+
+<Update label="January 2025" description="v1.5.0">
+### Added
+- LendingRisk API: Bank statement analysis
+- FraudShield: Synthetic identity detection
+- TransactionGuard: Merchant risk scoring
+
+### Improved
+- Identity: 15% faster OCR processing
+- All APIs: Enhanced error messages
+</Update>
+
+<Update label="December 2024" description="v1.4.0">
+### Added
+- KYB API: UBO detection improvements
+- Watchlist: Adverse media screening
+- Developer Tools: Request log retention
+
+### Fixed
+- Identity: Edge cases in face matching
+</Update>
+
+## API Versioning
+
+TXCloud uses date-based API versioning:
+
+```
+https://api.txcloud.io/v1
+```
+
+The current API version is `2025-01-01`.
+
+### Version Header
+
+You can pin a specific version:
+
+```bash
+curl https://api.txcloud.io/v1/... \
+  -H "TXCloud-Version: 2025-01-01"
+```
+
+## Deprecation Policy
+
+- Features deprecated with 6 months notice
+- Major breaking changes announced 12 months ahead
+- Email notifications for all deprecations

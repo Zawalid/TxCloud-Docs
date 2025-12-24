@@ -1,0 +1,43 @@
+---
+title: "Document Types"
+sidebarTitle: "Document Types"
+description: "Supported document types by country"
+icon: "id-card"
+---
+
+## Document Type Codes
+
+| Code | Name | Example |
+|------|------|---------|
+| `national_id` | National ID Card | Morocco CIN, UAE Emirates ID |
+| `passport` | Passport | Any country passport |
+| `driving_license` | Driver's License | Any country driver's license |
+| `residence_permit` | Residence Permit | EU Titre de Séjour, GCC Iqama |
+| `voter_id` | Voter ID | Nigeria VIN |
+
+## Morocco Documents
+
+| Document | Code | Back Required |
+|----------|------|---------------|
+| Carte d'Identité Nationale (CIN) | `national_id` | Yes |
+| Passport | `passport` | No |
+| Permis de Conduire | `driving_license` | Yes |
+| Carte de Séjour | `residence_permit` | Yes |
+
+## Extracted Fields
+
+Common fields extracted from documents:
+
+| Field | Description |
+|-------|-------------|
+| `full_name` | Complete name |
+| `first_name` | First/given name |
+| `last_name` | Last/family name |
+| `date_of_birth` | Date of birth |
+| `document_number` | Document ID number |
+| `expiry_date` | Document expiration |
+| `issue_date` | Document issue date |
+| `nationality` | Nationality |
+| `gender` | Gender (M/F) |
+| `address` | Registered address |
+| `mrz` | Machine Readable Zone data |

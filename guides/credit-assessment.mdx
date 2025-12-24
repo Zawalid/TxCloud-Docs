@@ -1,0 +1,309 @@
+---
+title: "Credit Assessment"
+sidebarTitle: "Credit Assessment"
+description: "Assess creditworthiness with TXCloud LendingRisk"
+icon: "chart-line"
+---
+
+## Overview
+
+LendingRisk provides comprehensive credit assessment including alternative credit scoring, income verification, and affordability analysis — designed for emerging markets where traditional credit bureaus have limited coverage.
+
+## Quick Start
+
+<CodeGroup>
+```javascript JavaScript
+const assessment = await txcloud.lending.assess({
+  applicant: {
+    id: 'usr_abc123',
+    first_name: 'Mohammed',
+    last_name: 'El Amrani',
+    date_of_birth: '1990-05-15',
+    phone: '+212612345678',
+    national_id: 'AE123456'
+  },
+  
+  employment: {
+    status: 'employed',
+    employer_name: 'Acme Corp',
+    monthly_income: 25000,
+    income_currency: 'MAD'
+  },
+  
+  loan_request: {
+    amount: 100000,
+    currency: 'MAD',
+    term_months: 36,
+    purpose: 'personal'
+  },
+  
+  data_sources: ['bank_statements', 'bureau']
+});
+
+console.log('Decision:', assessment.decision.recommendation);
+console.log('Credit Score:', assessment.credit_score.score);
+console.log('Affordable:', assessment.affordability.affordable);
+```
+
+```python Python
+assessment = txcloud.lending.assess(
+    applicant={
+        "id": "usr_abc123",
+        "first_name": "Mohammed",
+        "last_name": "El Amrani",
+        "date_of_birth": "1990-05-15",
+        "phone": "+212612345678"
+    },
+    employment={
+        "status": "employed",
+        "monthly_income": 25000,
+        "income_currency": "MAD"
+    },
+    loan_request={
+        "amount": 100000,
+        "term_months": 36,
+        "purpose": "personal"
+    }
+)
+```
+</CodeGroup>
+
+## Assessment Response
+
+```json
+{
+  "id": "lra_a1b2c3d4e5f6",
+  "status": "completed",
+  
+  "decision": {
+    "recommendation": "approve",
+    "confidence": 0.87,
+    "max_approved_amount": 100000,
+    "suggested_term_months": 36
+  },
+  
+  "credit_score": {
+    "score": 720,
+    "grade": "B+",
+    "percentile": 75,
+    "factors": {
+      "positive": ["Stable employment", "Regular income", "Low debt"],
+      "negative": ["Limited credit history"]
+    }
+  },
+  
+  "income_analysis": {
+    "stated_income": 25000,
+    "verified_income": 24500,
+    "income_match": true,
+    "income_stability": "stable"
+  },
+  
+  "affordability": {
+    "monthly_income": 24500,
+    "monthly_expenses": 12000,
+    "existing_debt_payments": 2500,
+    "proposed_payment": 3200,
+    "remaining_after_loan": 6800,
+    "affordable": true,
+    "dti_after": 0.23
+  },
+  
+  "pricing": {
+    "risk_tier": "A",
+    "suggested_rate": 12.5,
+    "rate_range": { "min": 11.0, "max": 14.0 }
+  }
+}
+```
+
+## Pre-Qualification
+
+Quick check before full assessment:
+
+```javascript
+const preQual = await txcloud.lending.prequalify({
+  applicant_id: userId,
+  monthly_income: 25000,
+  existing_monthly_debts: 2500,
+  loan_amount: 100000,
+  loan_term_months: 36
+});
+
+if (preQual.likely_qualified) {
+  // Proceed to full application
+  showFullApplication();
+} else {
+  // Show alternative options
+  showAlternatives(preQual.estimated_max_amount);
+}
+```
+
+## Income Verification
+
+Verify stated income from bank statements:
+
+```javascript
+// Upload bank statements
+const upload = await txcloud.lending.statements.upload({
+  applicant_id: userId,
+  documents: [{
+    type: 'bank_statement',
+    bank_name: 'Attijariwafa Bank',
+    file: statementBase64,
+    period_start: '2024-07-01',
+    period_end: '2024-12-31'
+  }]
+});
+
+// Get analysis results
+const insights = await txcloud.lending.statements.getInsights(upload.id);
+
+console.log('Average Monthly Income:', insights.income.average_monthly);
+console.log('Income Stability:', insights.income.stability);
+console.log('Expense Categories:', insights.expenses.by_category);
+```
+
+### Statement Insights
+
+```json
+{
+  "income": {
+    "total": 147000,
+    "average_monthly": 24500,
+    "sources": [
+      { "category": "salary", "amount": 147000, "percentage": 100 }
+    ],
+    "trend": "stable"
+  },
+  
+  "expenses": {
+    "total": 72000,
+    "average_monthly": 12000,
+    "by_category": [
+      { "category": "rent", "amount": 30000, "percentage": 42 },
+      { "category": "utilities", "amount": 6000, "percentage": 8 },
+      { "category": "groceries", "amount": 12000, "percentage": 17 }
+    ]
+  },
+  
+  "debt_payments": {
+    "total": 15000,
+    "monthly_average": 2500,
+    "identified_loans": [
+      { "lender": "Credit Bank", "type": "car_loan", "monthly_payment": 2500 }
+    ]
+  },
+  
+  "financial_health_score": 78,
+  "red_flags": [],
+  "positive_indicators": ["Regular salary", "Healthy savings", "No overdrafts"]
+}
+```
+
+## Affordability Check
+
+Assess if a loan is affordable:
+
+```javascript
+const affordability = await txcloud.lending.affordability.check({
+  applicant_id: userId,
+  monthly_income: 24500,
+  monthly_expenses: 12000,
+  existing_debt_payments: 2500,
+  proposed_loan: {
+    amount: 100000,
+    term_months: 36,
+    rate: 12.5
+  }
+});
+
+console.log('Affordable:', affordability.affordable);
+console.log('Monthly Payment:', affordability.monthly_payment);
+console.log('DTI After Loan:', affordability.ratios.dti_proposed);
+
+// Stress test
+console.log('Still affordable at +2% rate:', 
+  affordability.stress_test.rate_increase_2pct.still_affordable);
+```
+
+## Ongoing Monitoring
+
+Monitor borrowers for risk changes:
+
+```javascript
+// Subscribe to monitoring
+await txcloud.lending.monitor.subscribe({
+  borrower_id: userId,
+  loan_id: loanId,
+  alert_triggers: [
+    'score_decrease_50',
+    'missed_payment',
+    'new_debt',
+    'income_change'
+  ],
+  webhook_url: 'https://yourapp.com/webhooks/lending'
+});
+
+// You'll receive webhooks for alerts
+// Event: lending.monitor.alert
+```
+
+## Credit Score Grades
+
+| Grade | Score Range | Risk Level |
+|-------|-------------|------------|
+| A+ | 800-850 | Excellent |
+| A | 750-799 | Very Good |
+| B+ | 700-749 | Good |
+| B | 650-699 | Fair |
+| C+ | 600-649 | Below Average |
+| C | 550-599 | Poor |
+| D | 300-549 | Very Poor |
+
+## Data Sources
+
+LendingRisk can use multiple data sources:
+
+| Source | Data Provided |
+|--------|--------------|
+| `bank_statements` | Income, expenses, cash flow |
+| `bureau` | Credit history (where available) |
+| `telecom` | Airtime usage, recharge patterns |
+| `mobile_money` | Transaction history |
+| `employer` | Employment verification |
+
+<Tip>
+  More data sources = more accurate assessment. Use bank statements when possible.
+</Tip>
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Start with Pre-Qualification" icon="filter">
+    Use prequalify endpoint to filter applicants before full assessment.
+  </Accordion>
+  
+  <Accordion title="Request Bank Statements" icon="file-invoice">
+    Bank statements provide the most accurate income verification.
+  </Accordion>
+  
+  <Accordion title="Consider Stress Testing" icon="chart-line-down">
+    Always check if loan remains affordable under stress scenarios.
+  </Accordion>
+  
+  <Accordion title="Monitor Active Loans" icon="eye">
+    Set up monitoring for early warning of borrower risk changes.
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Business Verification" icon="building" href="/guides/business-verification">
+    Verify business entities
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/overview">
+    Explore LendingRisk endpoints
+  </Card>
+</CardGroup>

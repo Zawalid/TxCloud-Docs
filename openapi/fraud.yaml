@@ -1,0 +1,934 @@
+openapi: 3.0.3
+info:
+  title: TXCloud FraudShield API
+  version: "1.0.0"
+  description: |
+    The TXCloud FraudShield API provides fraud detection signals that enhance 
+    identity verification, plus tools to manage fraud rules, blocklists, and 
+    investigate suspicious activity.
+    
+    ## How It Works
+    FraudShield is called internally by the Identity API during verification.
+    Clients receive fraud signals in the verification response. These endpoints
+    are for configuration, investigation, and advanced use cases.
+    
+  contact:
+    name: TXCloud API Support
+    email: support@txcloud.io
+
+servers:
+  - url: https://api.txcloud.io/v1
+    description: Production
+  - url: https://sandbox.api.txcloud.io/v1
+    description: Sandbox
+
+tags:
+  - name: Duplicates
+    description: Duplicate detection across verifications
+  - name: Devices
+    description: Device intelligence and fingerprinting
+  - name: Velocity
+    description: Rate limiting and velocity controls
+  - name: Blocklist
+    description: Blocklist management
+  - name: Rules
+    description: Custom fraud rules engine
+  - name: Signals
+    description: Fraud signal reporting and management
+  - name: Analytics
+    description: Fraud analytics and reporting
+
+security:
+  - BearerAuth: []
+
+paths:
+  # ============================================
+  # DUPLICATE DETECTION
+  # ============================================
+  /fraud/duplicates/search:
+    post:
+      operationId: searchDuplicates
+      tags: [Duplicates]
+      summary: Search for duplicates
+      description: Search for duplicate documents or faces across verifications
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                document_number:
+                  type: string
+                document_image:
+                  type: string
+                  format: byte
+                face_image:
+                  type: string
+                  format: byte
+                threshold:
+                  type: number
+                  default: 0.85
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DuplicateSearchResult'
+
+  /fraud/duplicates/{id}:
+    get:
+      operationId: getDuplicateCluster
+      tags: [Duplicates]
+      summary: Get duplicate cluster
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Duplicate cluster details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DuplicateCluster'
+
+  /fraud/synthetic/analyze:
+    post:
+      operationId: analyzeSynthetic
+      tags: [Duplicates]
+      summary: Analyze synthetic identity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SyntheticAnalysisRequest'
+      responses:
+        '200':
+          description: Analysis results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SyntheticAnalysisResult'
+
+  # ============================================
+  # DEVICE INTELLIGENCE
+  # ============================================
+  /fraud/devices:
+    post:
+      operationId: registerDevice
+      tags: [Devices]
+      summary: Register device fingerprint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeviceRegistration'
+      responses:
+        '200':
+          description: Device profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+
+  /fraud/devices/{id}:
+    get:
+      operationId: getDevice
+      tags: [Devices]
+      summary: Get device profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Device details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Device'
+
+  /fraud/devices/{id}/history:
+    get:
+      operationId: getDeviceHistory
+      tags: [Devices]
+      summary: Get device history
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Device activity history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeviceHistory'
+
+  /fraud/devices/{id}/linked-accounts:
+    get:
+      operationId: getLinkedAccounts
+      tags: [Devices]
+      summary: Get linked accounts
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Linked accounts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LinkedAccounts'
+
+  /fraud/devices/{id}/block:
+    post:
+      operationId: blockDevice
+      tags: [Devices]
+      summary: Block device
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+                duration:
+                  type: string
+                  enum: [temporary, permanent]
+                expires_in:
+                  type: integer
+      responses:
+        '200':
+          description: Device blocked
+    delete:
+      operationId: unblockDevice
+      tags: [Devices]
+      summary: Unblock device
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Device unblocked
+
+  # ============================================
+  # VELOCITY CONTROLS
+  # ============================================
+  /fraud/velocity/check:
+    post:
+      operationId: checkVelocity
+      tags: [Velocity]
+      summary: Check velocity limits
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VelocityCheckRequest'
+      responses:
+        '200':
+          description: Velocity check result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VelocityCheckResult'
+
+  /fraud/velocity/rules:
+    get:
+      operationId: listVelocityRules
+      tags: [Velocity]
+      summary: List velocity rules
+      responses:
+        '200':
+          description: Velocity rules
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VelocityRuleList'
+    post:
+      operationId: createVelocityRule
+      tags: [Velocity]
+      summary: Create velocity rule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VelocityRuleCreate'
+      responses:
+        '201':
+          description: Rule created
+
+  # ============================================
+  # BLOCKLIST
+  # ============================================
+  /fraud/blocklist:
+    get:
+      operationId: listBlocklist
+      tags: [Blocklist]
+      summary: List blocked entities
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [device, ip, email, phone, document]
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Blocked entities
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlocklistEntries'
+    post:
+      operationId: addToBlocklist
+      tags: [Blocklist]
+      summary: Add to blocklist
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BlocklistEntry'
+      responses:
+        '201':
+          description: Entity added
+
+  /fraud/blocklist/{id}:
+    delete:
+      operationId: removeFromBlocklist
+      tags: [Blocklist]
+      summary: Remove from blocklist
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Entity removed
+
+  /fraud/blocklist/check:
+    post:
+      operationId: checkBlocklist
+      tags: [Blocklist]
+      summary: Check blocklist
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                checks:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                      value:
+                        type: string
+      responses:
+        '200':
+          description: Check results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlocklistCheckResult'
+
+  # ============================================
+  # RULES ENGINE
+  # ============================================
+  /fraud/rules:
+    get:
+      operationId: listFraudRules
+      tags: [Rules]
+      summary: List fraud rules
+      responses:
+        '200':
+          description: Fraud rules
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FraudRuleList'
+    post:
+      operationId: createFraudRule
+      tags: [Rules]
+      summary: Create fraud rule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FraudRuleCreate'
+      responses:
+        '201':
+          description: Rule created
+
+  /fraud/rules/{id}:
+    get:
+      operationId: getFraudRule
+      tags: [Rules]
+      summary: Get fraud rule
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Rule details
+    put:
+      operationId: updateFraudRule
+      tags: [Rules]
+      summary: Update fraud rule
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FraudRuleCreate'
+      responses:
+        '200':
+          description: Rule updated
+    delete:
+      operationId: deleteFraudRule
+      tags: [Rules]
+      summary: Delete fraud rule
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Rule deleted
+
+  /fraud/rules/test:
+    post:
+      operationId: testFraudRule
+      tags: [Rules]
+      summary: Test fraud rule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                condition:
+                  type: string
+                test_data:
+                  type: object
+      responses:
+        '200':
+          description: Test result
+
+  # ============================================
+  # SIGNALS
+  # ============================================
+  /fraud/signals:
+    get:
+      operationId: listSignals
+      tags: [Signals]
+      summary: List fraud signals
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, confirmed, dismissed]
+        - name: severity
+          in: query
+          schema:
+            type: string
+        - name: type
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Fraud signals
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignalList'
+    post:
+      operationId: reportSignal
+      tags: [Signals]
+      summary: Report fraud signal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignalReport'
+      responses:
+        '201':
+          description: Signal reported
+
+  /fraud/signals/{id}:
+    get:
+      operationId: getSignal
+      tags: [Signals]
+      summary: Get signal details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Signal details
+
+  /fraud/signals/{id}/confirm:
+    post:
+      operationId: confirmSignal
+      tags: [Signals]
+      summary: Confirm signal as fraud
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Signal confirmed
+
+  /fraud/signals/{id}/dismiss:
+    post:
+      operationId: dismissSignal
+      tags: [Signals]
+      summary: Dismiss signal
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Signal dismissed
+
+  # ============================================
+  # ANALYTICS
+  # ============================================
+  /fraud/analytics/summary:
+    get:
+      operationId: getFraudSummary
+      tags: [Analytics]
+      summary: Get fraud summary
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [today, 7d, 30d, 90d]
+      responses:
+        '200':
+          description: Fraud summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FraudSummary'
+
+  /fraud/analytics/trends:
+    get:
+      operationId: getFraudTrends
+      tags: [Analytics]
+      summary: Get fraud trends
+      responses:
+        '200':
+          description: Fraud trends
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FraudTrends'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    DuplicateSearchResult:
+      type: object
+      properties:
+        id:
+          type: string
+        duplicates_found:
+          type: boolean
+        match_count:
+          type: integer
+        matches:
+          type: array
+          items:
+            $ref: '#/components/schemas/DuplicateMatch'
+
+    DuplicateMatch:
+      type: object
+      properties:
+        verification_id:
+          type: string
+        match_type:
+          type: string
+        similarity:
+          type: number
+        created_at:
+          type: string
+          format: date-time
+
+    DuplicateCluster:
+      type: object
+      properties:
+        id:
+          type: string
+        verifications:
+          type: array
+          items:
+            type: string
+        risk_assessment:
+          type: object
+
+    SyntheticAnalysisRequest:
+      type: object
+      properties:
+        first_name:
+          type: string
+        last_name:
+          type: string
+        date_of_birth:
+          type: string
+        document_number:
+          type: string
+
+    SyntheticAnalysisResult:
+      type: object
+      properties:
+        id:
+          type: string
+        is_synthetic:
+          type: boolean
+        confidence:
+          type: number
+        risk_score:
+          type: integer
+        signals:
+          type: object
+
+    DeviceRegistration:
+      type: object
+      required: [fingerprint, ip_address]
+      properties:
+        fingerprint:
+          type: object
+        ip_address:
+          type: string
+        user_id:
+          type: string
+        session_id:
+          type: string
+
+    Device:
+      type: object
+      properties:
+        id:
+          type: string
+        is_new:
+          type: boolean
+        first_seen:
+          type: string
+          format: date-time
+        times_seen:
+          type: integer
+        risk_score:
+          type: integer
+        risk_level:
+          type: string
+        signals:
+          type: object
+        ip_analysis:
+          type: object
+        linked_accounts:
+          type: integer
+        is_blocked:
+          type: boolean
+
+    DeviceHistory:
+      type: object
+      properties:
+        device_id:
+          type: string
+        data:
+          type: array
+          items:
+            type: object
+
+    LinkedAccounts:
+      type: object
+      properties:
+        device_id:
+          type: string
+        accounts:
+          type: array
+          items:
+            type: object
+
+    VelocityCheckRequest:
+      type: object
+      required: [action]
+      properties:
+        action:
+          type: string
+        user_id:
+          type: string
+        ip_address:
+          type: string
+        device_id:
+          type: string
+        window:
+          type: string
+
+    VelocityCheckResult:
+      type: object
+      properties:
+        id:
+          type: string
+        allowed:
+          type: boolean
+        reason:
+          type: string
+        counts:
+          type: object
+        triggered_rules:
+          type: array
+          items:
+            type: object
+        retry_after:
+          type: integer
+
+    VelocityRuleList:
+      type: object
+      properties:
+        object:
+          type: string
+        data:
+          type: array
+          items:
+            type: object
+
+    VelocityRuleCreate:
+      type: object
+      properties:
+        name:
+          type: string
+        action:
+          type: string
+        scope:
+          type: string
+        limit:
+          type: integer
+        window:
+          type: string
+        response:
+          type: string
+
+    BlocklistEntries:
+      type: object
+      properties:
+        object:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/BlocklistEntry'
+
+    BlocklistEntry:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [device, ip, email, phone, document]
+        value:
+          type: string
+        reason:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+
+    BlocklistCheckResult:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+              value:
+                type: string
+              blocked:
+                type: boolean
+
+    FraudRuleList:
+      type: object
+      properties:
+        object:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/FraudRule'
+
+    FraudRule:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        condition:
+          type: string
+        action:
+          type: string
+        score_adjustment:
+          type: integer
+        enabled:
+          type: boolean
+
+    FraudRuleCreate:
+      type: object
+      required: [name, condition, action]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        condition:
+          type: string
+        action:
+          type: string
+          enum: [block, review, flag, allow]
+        score_adjustment:
+          type: integer
+        enabled:
+          type: boolean
+          default: true
+
+    SignalList:
+      type: object
+      properties:
+        object:
+          type: string
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Signal'
+
+    Signal:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        severity:
+          type: string
+        status:
+          type: string
+        description:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    SignalReport:
+      type: object
+      required: [type, severity, description]
+      properties:
+        verification_id:
+          type: string
+        user_id:
+          type: string
+        type:
+          type: string
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+        description:
+          type: string
+
+    FraudSummary:
+      type: object
+      properties:
+        period:
+          type: string
+        total_verifications:
+          type: integer
+        fraud_signals:
+          type: integer
+        fraud_rate:
+          type: number
+        by_type:
+          type: object
+        by_severity:
+          type: object
+
+    FraudTrends:
+      type: object
+      properties:
+        period:
+          type: string
+        granularity:
+          type: string
+        data:
+          type: array
+          items:
+            type: object

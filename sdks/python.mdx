@@ -1,0 +1,88 @@
+---
+title: "Python SDK"
+sidebarTitle: "Python"
+description: "Official TXCloud SDK for Python"
+icon: "python"
+---
+
+## Installation
+
+```bash
+pip install txcloud
+```
+
+## Quick Start
+
+```python
+from txcloud import TXCloud
+import os
+
+txcloud = TXCloud(api_key=os.environ.get("TXCLOUD_API_KEY"))
+
+verification = txcloud.identity.verify(
+    document_front=document_base64,
+    country="MA",
+    document_type="national_id"
+)
+
+print(verification.status)
+```
+
+## Configuration
+
+```python
+txcloud = TXCloud(
+    api_key="txc_live_xxx",
+    environment="production",  # or "sandbox"
+    timeout=30,
+    max_retries=3
+)
+```
+
+## Async Support
+
+```python
+from txcloud import AsyncTXCloud
+import asyncio
+
+async def main():
+    txcloud = AsyncTXCloud(api_key=os.environ["TXCLOUD_API_KEY"])
+    verification = await txcloud.identity.verify(...)
+    print(verification.status)
+
+asyncio.run(main())
+```
+
+## Error Handling
+
+```python
+from txcloud.exceptions import (
+    TXCloudError,
+    ValidationError,
+    RateLimitError
+)
+
+try:
+    result = txcloud.identity.verify(...)
+except ValidationError as e:
+    print(f"Validation failed: {e.message}")
+except RateLimitError as e:
+    print(f"Rate limited, retry after: {e.retry_after}")
+except TXCloudError as e:
+    print(f"API error: {e.code}")
+```
+
+## Type Hints
+
+Full type hints for IDE support:
+
+```python
+from txcloud.types import Verification, VerifyRequest
+
+request: VerifyRequest = {
+    "document_front": "...",
+    "country": "MA"
+}
+
+verification: Verification = txcloud.identity.verify(**request)
+```

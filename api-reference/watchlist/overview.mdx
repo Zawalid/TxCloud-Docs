@@ -1,0 +1,79 @@
+---
+title: "Watchlist API"
+sidebarTitle: "Overview"
+description: "AML/CFT screening against sanctions, PEP databases, and adverse media"
+icon: "magnifying-glass"
+---
+
+The Watchlist API provides comprehensive AML/CFT screening against global sanctions lists, PEP databases, and adverse media sources.
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Sanctions Screening" icon="globe">
+    Screen against OFAC, UN, EU, and 200+ global lists
+  </Card>
+  <Card title="PEP Database" icon="landmark">
+    Identify Politically Exposed Persons
+  </Card>
+  <Card title="Adverse Media" icon="newspaper">
+    Monitor negative news and media coverage
+  </Card>
+  <Card title="Ongoing Monitoring" icon="bell">
+    Continuous monitoring with real-time alerts
+  </Card>
+</CardGroup>
+
+## Base URL
+
+```
+https://api.txcloud.io/v1/watchlist
+```
+
+For testing, use the sandbox environment:
+
+```
+https://sandbox.api.txcloud.io/v1/watchlist
+```
+
+## Authentication
+
+All requests require a Bearer token:
+
+```bash
+curl https://api.txcloud.io/v1/watchlist/screen \
+  -H "Authorization: Bearer txc_live_your_api_key"
+```
+
+## Quick Start
+
+```javascript
+import TXCloud from '@txcloud/sdk';
+
+const txcloud = new TXCloud('your_api_key');
+
+const result = await txcloud.watchlist.screen({
+  entity: {
+    type: 'individual',
+    name: 'John Doe',
+    date_of_birth: '1980-01-15',
+    nationality: 'US'
+  },
+  lists: ['sanctions', 'pep', 'adverse_media'],
+  threshold: 0.85
+});
+
+console.log(result.status); // 'clear'
+console.log(result.matches); // []
+```
+
+## Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/watchlist/screen` | Screen an entity |
+| POST | `/watchlist/screen/batch` | Batch screening |
+| GET | `/watchlist/screen/{id}` | Get screening result |
+| POST | `/watchlist/matches/{id}/resolve` | Resolve a match |
+| POST | `/watchlist/monitor/subscribe` | Subscribe to monitoring |
+| GET | `/watchlist/lists` | List available watchlists |

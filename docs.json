@@ -1,0 +1,253 @@
+{
+  "$schema": "https://mintlify.com/schema/docs.json",
+  "name": "TXCloud",
+  "logo": {
+    "light": "/logo/light.svg",
+    "dark": "/logo/dark.svg"
+  },
+  "favicon": "/favicon.svg",
+  "colors": {
+    "primary": "#0066FF",
+    "light": "#4D94FF",
+    "dark": "#0052CC"
+  },
+  "theme": "mint",
+  "background": {
+    "style": "gradient"
+  },
+  "topbarLinks": [
+    {
+      "name": "Dashboard",
+      "url": "https://dashboard.txcloud.io"
+    },
+    {
+      "name": "Status",
+      "url": "https://status.txcloud.io"
+    }
+  ],
+  "topbarCtaButton": {
+    "name": "Get API Key",
+    "url": "https://dashboard.txcloud.io/signup"
+  },
+  "feedback": {
+    "thumbsRating": true,
+    "suggestEdit": true
+  },
+  "api": {
+    "baseUrl": "https://api.txcloud.io/v1",
+    "auth": {
+      "method": "bearer",
+      "name": "Authorization"
+    },
+    "playground": {
+      "mode": "simple"
+    }
+  },
+  "openapi": [
+    "openapi/identity.yaml",
+    "openapi/fraud.yaml",
+    "openapi/transactions.yaml",
+    "openapi/lending.yaml",
+    "openapi/kyb.yaml",
+    "openapi/watchlist.yaml",
+    "openapi/devex.yaml"
+  ],
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "icon": "rocket",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "authentication",
+              "rate-limits"
+            ]
+          },
+          {
+            "group": "Core Concepts",
+            "icon": "book",
+            "pages": [
+              "concepts/verification-flow",
+              "concepts/risk-scoring",
+              "concepts/webhooks",
+              "concepts/idempotency"
+            ]
+          },
+          {
+            "group": "Guides",
+            "icon": "map",
+            "pages": [
+              "guides/verify-identity",
+              "guides/fraud-detection",
+              "guides/transaction-monitoring",
+              "guides/credit-assessment",
+              "guides/business-verification",
+              "guides/watchlist-screening"
+            ]
+          },
+          {
+            "group": "SDKs",
+            "icon": "code",
+            "pages": [
+              "sdks/overview",
+              "sdks/javascript",
+              "sdks/python",
+              "sdks/go",
+              "sdks/java",
+              "sdks/php"
+            ]
+          },
+          {
+            "group": "Resources",
+            "icon": "folder",
+            "pages": [
+              "resources/error-codes",
+              "resources/country-coverage",
+              "resources/document-types",
+              "resources/changelog",
+              "resources/support"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "url": "api-reference/overview",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "api-reference/overview",
+              "api-reference/authentication",
+              "api-reference/errors",
+              "api-reference/pagination"
+            ]
+          },
+          {
+            "group": "Identity API",
+            "icon": "id-card",
+            "pages": [
+              "api-reference/identity/overview"
+            ],
+            "openapi": {
+              "source": "openapi/identity.yaml",
+              "directory": "/api-reference/identity"
+            }
+          },
+          {
+            "group": "FraudShield API",
+            "icon": "shield-halved",
+            "pages": [
+              "api-reference/fraud/overview"
+            ],
+            "openapi": {
+              "source": "openapi/fraud.yaml",
+              "directory": "/api-reference/fraud"
+            }
+          },
+          {
+            "group": "TransactionGuard API",
+            "icon": "credit-card",
+            "pages": [
+              "api-reference/transactions/overview"
+            ],
+            "openapi": {
+              "source": "openapi/transactions.yaml",
+              "directory": "/api-reference/transactions"
+            }
+          },
+          {
+            "group": "LendingRisk API",
+            "icon": "chart-line",
+            "pages": [
+              "api-reference/lending/overview"
+            ],
+            "openapi": {
+              "source": "openapi/lending.yaml",
+              "directory": "/api-reference/lending"
+            }
+          },
+          {
+            "group": "KYB API",
+            "icon": "building",
+            "pages": [
+              "api-reference/kyb/overview"
+            ],
+            "openapi": {
+              "source": "openapi/kyb.yaml",
+              "directory": "/api-reference/kyb"
+            }
+          },
+          {
+            "group": "Watchlist API",
+            "icon": "magnifying-glass",
+            "pages": [
+              "api-reference/watchlist/overview"
+            ],
+            "openapi": {
+              "source": "openapi/watchlist.yaml",
+              "directory": "/api-reference/watchlist"
+            }
+          },
+          {
+            "group": "Developer Tools API",
+            "icon": "gear",
+            "pages": [
+              "api-reference/devex/overview"
+            ],
+            "openapi": {
+              "source": "openapi/devex.yaml",
+              "directory": "/api-reference/devex"
+            }
+          }
+        ]
+      }
+    ],
+    "anchors": [
+      {
+        "name": "API Status",
+        "icon": "signal",
+        "url": "https://status.txcloud.io"
+      },
+      {
+        "name": "Blog",
+        "icon": "newspaper",
+        "url": "https://txcloud.io/blog"
+      },
+      {
+        "name": "Community",
+        "icon": "discord",
+        "url": "https://discord.gg/txcloud"
+      }
+    ]
+  },
+  "footerSocials": {
+    "twitter": "https://twitter.com/txcloud",
+    "linkedin": "https://linkedin.com/company/txcloud",
+    "github": "https://github.com/txcloud"
+  },
+  "analytics": {
+    "ga4": {
+      "measurementId": "G-XXXXXXXXXX"
+    }
+  },
+  "search": {
+    "prompt": "Search TXCloud docs..."
+  },
+  "integrations": {
+    "intercom": {
+      "appId": "YOUR_INTERCOM_APP_ID"
+    }
+  },
+  "seo": {
+    "indexHiddenPages": false
+  },
+  "modeToggle": {
+    "default": "light",
+    "isHidden": false
+  }
+}

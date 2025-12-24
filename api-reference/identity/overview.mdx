@@ -1,0 +1,75 @@
+---
+title: "Identity API"
+sidebarTitle: "Overview"
+description: "KYC verification with document OCR, face matching, and liveness detection"
+icon: "id-card"
+---
+
+The Identity API enables comprehensive identity verification through document analysis, biometric matching, and fraud detection.
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="Document OCR" icon="file-lines">
+    Extract data from 50+ document types across MENA and Africa
+  </Card>
+  <Card title="Face Matching" icon="face-viewfinder">
+    Compare selfies to document photos with 99.5% accuracy
+  </Card>
+  <Card title="Liveness Detection" icon="video">
+    Detect spoofing attempts including photos, screens, and masks
+  </Card>
+  <Card title="Fraud Detection" icon="shield-check">
+    Identify document tampering and manipulation
+  </Card>
+</CardGroup>
+
+## Base URL
+
+```
+https://api.txcloud.io/v1/identity
+```
+
+For testing, use the sandbox environment:
+
+```
+https://sandbox.api.txcloud.io/v1/identity
+```
+
+## Authentication
+
+All requests require a Bearer token:
+
+```bash
+curl https://api.txcloud.io/v1/identity/verify \
+  -H "Authorization: Bearer txc_live_your_api_key"
+```
+
+## Quick Start
+
+```javascript
+import TXCloud from '@txcloud/sdk';
+
+const txcloud = new TXCloud('your_api_key');
+
+const verification = await txcloud.identity.verify({
+  document_front: 'base64_image...',
+  selfie: 'base64_selfie...',
+  country: 'MA',
+  document_type: 'national_id',
+  checks: ['ocr', 'face_match', 'liveness', 'fraud']
+});
+
+console.log(verification.status); // 'verified'
+```
+
+## Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/identity/verify` | Create full verification |
+| POST | `/identity/extract` | Extract document data only |
+| POST | `/identity/face-match` | Compare two faces |
+| POST | `/identity/liveness` | Check liveness |
+| GET | `/identity/verifications` | List verifications |
+| GET | `/identity/verifications/{id}` | Get verification details |

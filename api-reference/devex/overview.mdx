@@ -1,0 +1,73 @@
+---
+title: "Developer Tools API"
+sidebarTitle: "Overview"
+description: "Manage API keys, webhooks, and monitor usage"
+icon: "gear"
+---
+
+The Developer Tools API provides endpoints for managing your TXCloud integration, including API keys, webhooks, and usage analytics.
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="API Key Management" icon="key">
+    Create, rotate, and manage API keys
+  </Card>
+  <Card title="Webhooks" icon="webhook">
+    Configure and test webhook endpoints
+  </Card>
+  <Card title="Usage Analytics" icon="chart-pie">
+    Monitor API usage and costs
+  </Card>
+  <Card title="Audit Logs" icon="clipboard-list">
+    Track all API activity
+  </Card>
+</CardGroup>
+
+## Base URL
+
+```
+https://api.txcloud.io/v1/devex
+```
+
+## Authentication
+
+All requests require a Bearer token:
+
+```bash
+curl https://api.txcloud.io/v1/devex/api-keys \
+  -H "Authorization: Bearer txc_live_your_api_key"
+```
+
+## Quick Start
+
+```javascript
+import TXCloud from '@txcloud/sdk';
+
+const txcloud = new TXCloud('your_api_key');
+
+// Create a new API key
+const newKey = await txcloud.devex.apiKeys.create({
+  name: 'Production Key',
+  environment: 'live',
+  permissions: ['identity:write', 'fraud:read']
+});
+
+// Set up a webhook
+const webhook = await txcloud.devex.webhooks.create({
+  url: 'https://your-app.com/webhooks/txcloud',
+  events: ['verification.completed', 'fraud.alert']
+});
+```
+
+## Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/devex/api-keys` | List API keys |
+| POST | `/devex/api-keys` | Create API key |
+| DELETE | `/devex/api-keys/{id}` | Revoke API key |
+| GET | `/devex/webhooks` | List webhooks |
+| POST | `/devex/webhooks` | Create webhook |
+| POST | `/devex/webhooks/{id}/test` | Test webhook |
+| GET | `/devex/usage` | Get usage stats |

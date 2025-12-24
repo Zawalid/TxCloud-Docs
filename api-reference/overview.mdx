@@ -1,0 +1,126 @@
+---
+title: "API Overview"
+sidebarTitle: "Overview"
+description: "TXCloud API Reference - 170 endpoints across 7 APIs"
+icon: "code"
+---
+
+## Base URL
+
+```
+https://api.txcloud.io/v1
+```
+
+For testing, use the sandbox environment:
+```
+https://sandbox.api.txcloud.io/v1
+```
+
+## Authentication
+
+All API requests require authentication via Bearer token:
+
+```bash
+curl https://api.txcloud.io/v1/identity/verify \
+  -H "Authorization: Bearer txc_live_your_api_key"
+```
+
+<Card title="Authentication Guide" icon="key" href="/authentication">
+  Learn more about API authentication
+</Card>
+
+## APIs
+
+<CardGroup cols={2}>
+  <Card title="Identity API" icon="id-card" href="/api-reference/identity">
+    19 endpoints for KYC verification
+  </Card>
+  <Card title="FraudShield API" icon="shield-halved" href="/api-reference/fraud">
+    29 endpoints for fraud detection
+  </Card>
+  <Card title="TransactionGuard API" icon="credit-card" href="/api-reference/transactions">
+    27 endpoints for transaction scoring
+  </Card>
+  <Card title="LendingRisk API" icon="chart-line" href="/api-reference/lending">
+    24 endpoints for credit assessment
+  </Card>
+  <Card title="KYB API" icon="building" href="/api-reference/kyb">
+    25 endpoints for business verification
+  </Card>
+  <Card title="Watchlist API" icon="magnifying-glass" href="/api-reference/watchlist">
+    18 endpoints for AML screening
+  </Card>
+  <Card title="Developer Tools" icon="gear" href="/api-reference/devex">
+    28 endpoints for API management
+  </Card>
+</CardGroup>
+
+## Request Format
+
+All POST/PUT requests use JSON:
+
+```bash
+curl -X POST https://api.txcloud.io/v1/identity/verify \
+  -H "Authorization: Bearer $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"document_front": "...", "country": "MA"}'
+```
+
+## Response Format
+
+All responses are JSON:
+
+```json
+{
+  "id": "ver_a1b2c3d4",
+  "object": "identity.verification",
+  "created_at": "2025-01-15T10:30:00Z",
+  "status": "verified",
+  ...
+}
+```
+
+## Pagination
+
+List endpoints use cursor-based pagination:
+
+```bash
+GET /v1/identity/verifications?limit=20&starting_after=ver_abc123
+```
+
+```json
+{
+  "object": "list",
+  "data": [...],
+  "has_more": true,
+  "next_cursor": "ver_xyz789"
+}
+```
+
+## Rate Limits
+
+| Plan | Requests/Minute |
+|------|-----------------|
+| Free | 60 |
+| Starter | 300 |
+| Growth | 1,000 |
+| Enterprise | Custom |
+
+## Errors
+
+All errors follow a consistent format:
+
+```json
+{
+  "error": {
+    "code": "invalid_request",
+    "message": "Document image is required",
+    "type": "validation_error",
+    "request_id": "req_a1b2c3d4"
+  }
+}
+```
+
+<Card title="Error Codes Reference" icon="triangle-exclamation" href="/resources/error-codes">
+  View all error codes
+</Card>

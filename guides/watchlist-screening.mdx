@@ -1,0 +1,137 @@
+---
+title: "Watchlist Screening"
+sidebarTitle: "Watchlist Screening"
+description: "Screen individuals and entities against global watchlists"
+icon: "magnifying-glass"
+---
+
+## Overview
+
+The Watchlist API screens individuals and entities against global sanctions lists, PEP databases, and adverse media sources for AML/CFT compliance.
+
+## Quick Start
+
+```javascript
+const result = await txcloud.watchlist.screen({
+  type: 'individual',
+  name: 'Mohammed El Amrani',
+  date_of_birth: '1990-05-15',
+  country: 'MA'
+});
+
+console.log('Status:', result.status);  // 'clear' or 'potential_match'
+console.log('Matches:', result.matches.length);
+```
+
+## Screening Response
+
+```json
+{
+  "id": "scr_a1b2c3d4",
+  "status": "clear",
+  "risk_level": "low",
+  
+  "entity": {
+    "type": "individual",
+    "name": "Mohammed El Amrani",
+    "date_of_birth": "1990-05-15",
+    "country": "MA"
+  },
+  
+  "checks": {
+    "sanctions": { "status": "clear", "matches": 0 },
+    "pep": { "status": "clear", "matches": 0 },
+    "adverse_media": { "status": "clear", "matches": 0 }
+  },
+  
+  "matches": []
+}
+```
+
+## Handling Matches
+
+```javascript
+if (result.status === 'potential_match') {
+  for (const match of result.matches) {
+    console.log(`Match: ${match.name}`);
+    console.log(`List: ${match.list_name}`);
+    console.log(`Score: ${match.similarity_score}`);
+    
+    // Review and resolve
+    await txcloud.watchlist.matches.resolve(match.id, {
+      resolution: 'false_positive',  // or 'true_positive', 'escalate'
+      notes: 'Different person - verified by ID check'
+    });
+  }
+}
+```
+
+## Watchlists Covered
+
+| List | Type | Coverage |
+|------|------|----------|
+| OFAC SDN | Sanctions | Global |
+| UN Consolidated | Sanctions | Global |
+| EU Sanctions | Sanctions | EU |
+| HMT Sanctions | Sanctions | UK |
+| PEP Lists | Political | Global |
+| Adverse Media | Negative News | Global |
+
+## Batch Screening
+
+Screen multiple entities at once:
+
+```javascript
+const batch = await txcloud.watchlist.screenBatch({
+  entities: [
+    { type: 'individual', name: 'Person 1' },
+    { type: 'individual', name: 'Person 2' },
+    { type: 'entity', name: 'Company ABC' }
+  ]
+});
+
+console.log(`Screened: ${batch.total}`);
+console.log(`Matches: ${batch.with_matches}`);
+```
+
+## Ongoing Monitoring
+
+Subscribe to continuous monitoring:
+
+```javascript
+await txcloud.watchlist.monitor.subscribe({
+  entity: {
+    type: 'individual',
+    name: 'Mohammed El Amrani'
+  },
+  lists: ['sanctions', 'pep', 'adverse_media'],
+  webhook_url: 'https://yourapp.com/webhooks/watchlist'
+});
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Screen at Onboarding" icon="user-plus">
+    Screen all customers during initial onboarding.
+  </Accordion>
+  
+  <Accordion title="Use Ongoing Monitoring" icon="eye">
+    Set up monitoring for long-term customer relationships.
+  </Accordion>
+  
+  <Accordion title="Document Decisions" icon="file">
+    Always record resolution decisions with notes for audit trail.
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Identity Verification" icon="id-card" href="/guides/verify-identity">
+    Start with identity verification
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/overview">
+    Explore Watchlist endpoints
+  </Card>
+</CardGroup>

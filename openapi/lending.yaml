@@ -1,0 +1,701 @@
+openapi: 3.0.3
+info:
+  title: TXCloud LendingRisk API
+  version: "1.0.0"
+  description: |
+    Credit risk assessment and affordability analysis for lending decisions.
+    Aggregates data from bank statements, bureaus, and alternative sources.
+
+servers:
+  - url: https://api.txcloud.io/v1
+  - url: https://sandbox.api.txcloud.io/v1
+
+tags:
+  - name: Assessment
+    description: Credit assessment endpoints
+  - name: Income
+    description: Income verification
+  - name: Statements
+    description: Bank statement analysis
+  - name: Monitoring
+    description: Borrower monitoring
+  - name: Models
+    description: Scoring models
+  - name: Analytics
+    description: Portfolio analytics
+
+security:
+  - BearerAuth: []
+
+paths:
+  /lending/assess:
+    post:
+      operationId: createAssessment
+      tags: [Assessment]
+      summary: Full credit assessment
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssessmentRequest'
+      responses:
+        '200':
+          description: Assessment result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Assessment'
+
+  /lending/prequalify:
+    post:
+      operationId: prequalify
+      tags: [Assessment]
+      summary: Quick pre-qualification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PrequalifyRequest'
+      responses:
+        '200':
+          description: Pre-qualification result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Prequalification'
+
+  /lending/score:
+    post:
+      operationId: getScore
+      tags: [Assessment]
+      summary: Get credit score only
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                applicant_id:
+                  type: string
+      responses:
+        '200':
+          description: Credit score
+
+  /lending/assessments:
+    get:
+      operationId: listAssessments
+      tags: [Assessment]
+      summary: List assessments
+      responses:
+        '200':
+          description: Assessments list
+
+  /lending/assessments/{id}:
+    get:
+      operationId: getAssessment
+      tags: [Assessment]
+      summary: Get assessment
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Assessment details
+
+  /lending/income/verify:
+    post:
+      operationId: verifyIncome
+      tags: [Income]
+      summary: Verify income
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IncomeVerifyRequest'
+      responses:
+        '200':
+          description: Income verification result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IncomeVerification'
+
+  /lending/income/analyze:
+    post:
+      operationId: analyzeIncome
+      tags: [Income]
+      summary: Analyze income stability
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                applicant_id:
+                  type: string
+                statement_ids:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Income analysis
+
+  /lending/affordability/check:
+    post:
+      operationId: checkAffordability
+      tags: [Income]
+      summary: Check affordability
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AffordabilityRequest'
+      responses:
+        '200':
+          description: Affordability result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AffordabilityCheck'
+
+  /lending/dti/calculate:
+    post:
+      operationId: calculateDTI
+      tags: [Income]
+      summary: Calculate DTI
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                monthly_income:
+                  type: number
+                monthly_debts:
+                  type: number
+                proposed_payment:
+                  type: number
+      responses:
+        '200':
+          description: DTI calculation
+
+  /lending/statements/upload:
+    post:
+      operationId: uploadStatements
+      tags: [Statements]
+      summary: Upload bank statements
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StatementUpload'
+      responses:
+        '201':
+          description: Upload initiated
+
+  /lending/statements/analyze:
+    post:
+      operationId: analyzeStatements
+      tags: [Statements]
+      summary: Analyze statements
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                statement_ids:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Analysis started
+
+  /lending/statements/{id}:
+    get:
+      operationId: getStatement
+      tags: [Statements]
+      summary: Get statement analysis
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Statement analysis
+
+  /lending/statements/{id}/transactions:
+    get:
+      operationId: getStatementTransactions
+      tags: [Statements]
+      summary: Get transactions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Categorized transactions
+
+  /lending/statements/{id}/insights:
+    get:
+      operationId: getStatementInsights
+      tags: [Statements]
+      summary: Get insights
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Financial insights
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatementInsights'
+
+  /lending/monitor/subscribe:
+    post:
+      operationId: subscribeMonitoring
+      tags: [Monitoring]
+      summary: Subscribe to monitoring
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MonitorSubscription'
+      responses:
+        '201':
+          description: Subscription created
+
+  /lending/monitor/{id}:
+    delete:
+      operationId: unsubscribeMonitoring
+      tags: [Monitoring]
+      summary: Unsubscribe
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Unsubscribed
+
+  /lending/monitor:
+    get:
+      operationId: listMonitored
+      tags: [Monitoring]
+      summary: List monitored borrowers
+      responses:
+        '200':
+          description: Monitored list
+
+  /lending/monitor/{id}/alerts:
+    get:
+      operationId: getMonitorAlerts
+      tags: [Monitoring]
+      summary: Get alerts
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Alerts
+
+  /lending/models:
+    get:
+      operationId: listModels
+      tags: [Models]
+      summary: List scoring models
+      responses:
+        '200':
+          description: Models list
+
+  /lending/models/{id}:
+    get:
+      operationId: getModel
+      tags: [Models]
+      summary: Get model details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Model details
+
+  /lending/models/{id}/score:
+    post:
+      operationId: scoreWithModel
+      tags: [Models]
+      summary: Score with model
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Score result
+
+  /lending/analytics/summary:
+    get:
+      operationId: getLendingSummary
+      tags: [Analytics]
+      summary: Portfolio summary
+      responses:
+        '200':
+          description: Summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LendingSummary'
+
+  /lending/analytics/distribution:
+    get:
+      operationId: getScoreDistribution
+      tags: [Analytics]
+      summary: Score distribution
+      responses:
+        '200':
+          description: Distribution
+
+  /lending/analytics/defaults:
+    get:
+      operationId: getDefaultAnalysis
+      tags: [Analytics]
+      summary: Default analysis
+      responses:
+        '200':
+          description: Default rates
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+
+  schemas:
+    AssessmentRequest:
+      type: object
+      required: [applicant, loan_request, consent]
+      properties:
+        applicant:
+          type: object
+          required: [id, first_name, last_name, date_of_birth, phone]
+          properties:
+            id:
+              type: string
+            first_name:
+              type: string
+            last_name:
+              type: string
+            date_of_birth:
+              type: string
+              format: date
+            phone:
+              type: string
+            email:
+              type: string
+            national_id:
+              type: string
+        employment:
+          type: object
+          properties:
+            status:
+              type: string
+              enum: [employed, self_employed, part_time, contract, retired, unemployed]
+            employer_name:
+              type: string
+            monthly_income:
+              type: number
+            income_currency:
+              type: string
+        loan_request:
+          type: object
+          required: [amount, currency, term_months, purpose]
+          properties:
+            amount:
+              type: number
+            currency:
+              type: string
+            term_months:
+              type: integer
+            purpose:
+              type: string
+        existing_debts:
+          type: array
+          items:
+            type: object
+        consent:
+          type: object
+          required: [bureau_check, timestamp]
+          properties:
+            bureau_check:
+              type: boolean
+            bank_data:
+              type: boolean
+            timestamp:
+              type: string
+              format: date-time
+
+    Assessment:
+      type: object
+      properties:
+        id:
+          type: string
+        object:
+          type: string
+        status:
+          type: string
+        decision:
+          type: object
+          properties:
+            recommendation:
+              type: string
+              enum: [approve, approve_with_conditions, review, decline]
+            confidence:
+              type: number
+            max_approved_amount:
+              type: number
+        credit_score:
+          type: object
+          properties:
+            score:
+              type: integer
+            grade:
+              type: string
+            percentile:
+              type: integer
+        income_analysis:
+          type: object
+        affordability:
+          type: object
+        pricing:
+          type: object
+
+    PrequalifyRequest:
+      type: object
+      required: [monthly_income, loan_amount, loan_term_months]
+      properties:
+        applicant_id:
+          type: string
+        monthly_income:
+          type: number
+        existing_monthly_debts:
+          type: number
+        loan_amount:
+          type: number
+        loan_term_months:
+          type: integer
+
+    Prequalification:
+      type: object
+      properties:
+        id:
+          type: string
+        likely_qualified:
+          type: boolean
+        confidence:
+          type: number
+        estimated_score_range:
+          type: object
+        estimated_max_amount:
+          type: number
+        dti_estimate:
+          type: number
+
+    IncomeVerifyRequest:
+      type: object
+      required: [applicant_id, stated_income]
+      properties:
+        applicant_id:
+          type: string
+        stated_income:
+          type: number
+        currency:
+          type: string
+        income_type:
+          type: string
+        statement_ids:
+          type: array
+          items:
+            type: string
+
+    IncomeVerification:
+      type: object
+      properties:
+        id:
+          type: string
+        verified:
+          type: boolean
+        match:
+          type: boolean
+        stated_income:
+          type: number
+        detected_income:
+          type: number
+        variance:
+          type: number
+        income_sources:
+          type: array
+          items:
+            type: object
+        stability:
+          type: object
+
+    AffordabilityRequest:
+      type: object
+      properties:
+        applicant_id:
+          type: string
+        monthly_income:
+          type: number
+        monthly_expenses:
+          type: number
+        existing_debt_payments:
+          type: number
+        proposed_loan:
+          type: object
+          properties:
+            amount:
+              type: number
+            term_months:
+              type: integer
+            rate:
+              type: number
+
+    AffordabilityCheck:
+      type: object
+      properties:
+        id:
+          type: string
+        affordable:
+          type: boolean
+        monthly_payment:
+          type: number
+        ratios:
+          type: object
+        stress_test:
+          type: object
+        recommendation:
+          type: string
+
+    StatementUpload:
+      type: object
+      required: [applicant_id, documents]
+      properties:
+        applicant_id:
+          type: string
+        documents:
+          type: array
+          items:
+            type: object
+            properties:
+              type:
+                type: string
+              bank_name:
+                type: string
+              file:
+                type: string
+                format: byte
+              period_start:
+                type: string
+                format: date
+              period_end:
+                type: string
+                format: date
+
+    StatementInsights:
+      type: object
+      properties:
+        statement_id:
+          type: string
+        period:
+          type: object
+        summary:
+          type: object
+        income:
+          type: object
+        expenses:
+          type: object
+        debt_payments:
+          type: object
+        red_flags:
+          type: array
+          items:
+            type: string
+        positive_indicators:
+          type: array
+          items:
+            type: string
+        financial_health_score:
+          type: integer
+
+    MonitorSubscription:
+      type: object
+      required: [borrower_id]
+      properties:
+        borrower_id:
+          type: string
+        loan_id:
+          type: string
+        alert_triggers:
+          type: array
+          items:
+            type: string
+        webhook_url:
+          type: string
+        check_frequency:
+          type: string
+
+    LendingSummary:
+      type: object
+      properties:
+        period:
+          type: string
+        portfolio:
+          type: object
+        decisions:
+          type: object
+        approval_rate:
+          type: number
+        average_score:
+          type: integer
+        risk_metrics:
+          type: object

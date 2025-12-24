@@ -1,0 +1,190 @@
+---
+title: "Business Verification"
+sidebarTitle: "Business Verification"
+description: "Verify businesses with TXCloud KYB API"
+icon: "building"
+---
+
+## Overview
+
+The KYB (Know Your Business) API verifies business entities, retrieves company data, identifies Ultimate Beneficial Owners (UBOs), and screens directors against watchlists.
+
+## Quick Start
+
+```javascript
+const verification = await txcloud.kyb.verify({
+  company: {
+    name: 'Acme Corp SARL',
+    registration_number: 'RC12345',
+    country: 'MA'
+  },
+  checks: ['registry', 'ownership', 'directors', 'screening']
+});
+
+console.log('Status:', verification.status);
+console.log('Legal Name:', verification.company.legal_name);
+console.log('UBOs:', verification.ubos);
+```
+
+## Verification Response
+
+```json
+{
+  "id": "kyb_a1b2c3d4",
+  "status": "verified",
+  
+  "company": {
+    "legal_name": "Acme Corporation SARL",
+    "trading_name": "Acme Corp",
+    "registration_number": "RC12345",
+    "tax_id": "12345678",
+    "incorporation_date": "2015-03-20",
+    "legal_form": "SARL",
+    "status": "active",
+    "address": {
+      "street": "123 Boulevard Mohammed V",
+      "city": "Casablanca",
+      "country": "MA"
+    },
+    "industry": "Technology",
+    "employee_count": "50-100"
+  },
+  
+  "directors": [
+    {
+      "name": "Mohammed El Amrani",
+      "role": "CEO",
+      "nationality": "Moroccan",
+      "appointed_date": "2015-03-20",
+      "screening": { "status": "clear", "pep": false, "sanctions": false }
+    }
+  ],
+  
+  "ubos": [
+    {
+      "name": "Mohammed El Amrani",
+      "ownership_percentage": 60,
+      "is_ubo": true,
+      "verification_status": "verified"
+    },
+    {
+      "name": "Fatima Benali",
+      "ownership_percentage": 40,
+      "is_ubo": true,
+      "verification_status": "verified"
+    }
+  ],
+  
+  "screening": {
+    "status": "clear",
+    "checks": {
+      "sanctions": "clear",
+      "pep": "clear",
+      "adverse_media": "clear"
+    }
+  }
+}
+```
+
+## Company Search
+
+Search for companies before verification:
+
+```javascript
+const results = await txcloud.kyb.companies.search({
+  query: 'Acme Corp',
+  country: 'MA'
+});
+
+for (const company of results.data) {
+  console.log(`${company.name} - ${company.registration_number}`);
+}
+```
+
+## Ownership Structure
+
+Get complete ownership chain:
+
+```javascript
+const ownership = await txcloud.kyb.companies.getOwnership(companyId);
+
+console.log('Ownership structure:');
+for (const owner of ownership.shareholders) {
+  console.log(`${owner.name}: ${owner.percentage}%`);
+  if (owner.type === 'company') {
+    // Nested company - has its own shareholders
+    console.log('  Owned by:', owner.shareholders);
+  }
+}
+```
+
+## UBO Detection
+
+Identify Ultimate Beneficial Owners (25%+ ownership):
+
+```javascript
+const ubos = await txcloud.kyb.companies.getUBOs(companyId);
+
+for (const ubo of ubos.data) {
+  console.log(`UBO: ${ubo.name}`);
+  console.log(`  Ownership: ${ubo.ownership_percentage}%`);
+  console.log(`  Control Type: ${ubo.control_type}`);
+  console.log(`  Verified: ${ubo.verification_status}`);
+}
+```
+
+## Director Screening
+
+Screen directors against watchlists:
+
+```javascript
+const directors = await txcloud.kyb.companies.getDirectors(companyId);
+
+for (const director of directors.data) {
+  if (director.screening.pep) {
+    console.log(`⚠️ ${director.name} is a PEP`);
+  }
+  if (director.screening.sanctions) {
+    console.log(`🚨 ${director.name} has sanctions match`);
+  }
+}
+```
+
+## Available Registries
+
+| Country | Registry | Coverage |
+|---------|----------|----------|
+| 🇲🇦 Morocco | OMPIC | Full |
+| 🇪🇬 Egypt | GAFI | Full |
+| 🇦🇪 UAE | DED/MOEC | Full |
+| 🇸🇦 Saudi Arabia | MCI | Full |
+| 🇳🇬 Nigeria | CAC | Full |
+| 🇰🇪 Kenya | BRS | Full |
+| 🇿🇦 South Africa | CIPC | Full |
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Always Get UBOs" icon="users">
+    Regulations require identifying all UBOs with 25%+ ownership.
+  </Accordion>
+  
+  <Accordion title="Screen All Directors" icon="magnifying-glass">
+    Screen directors and UBOs against sanctions and PEP lists.
+  </Accordion>
+  
+  <Accordion title="Monitor Changes" icon="bell">
+    Subscribe to monitoring for ownership changes.
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Watchlist Screening" icon="magnifying-glass" href="/guides/watchlist-screening">
+    Screen individuals and entities
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/overview">
+    Explore KYB endpoints
+  </Card>
+</CardGroup>

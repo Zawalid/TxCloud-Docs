@@ -1,0 +1,565 @@
+openapi: 3.0.3
+info:
+  title: TXCloud Watchlist API
+  version: "1.0.0"
+  description: |
+    AML/CFT screening against global sanctions lists, PEP databases, and adverse media.
+
+servers:
+  - url: https://api.txcloud.io/v1
+  - url: https://sandbox.api.txcloud.io/v1
+
+tags:
+  - name: Screening
+    description: Entity screening
+  - name: Matches
+    description: Match management
+  - name: Monitoring
+    description: Ongoing monitoring
+  - name: Lists
+    description: Watchlist management
+  - name: Analytics
+    description: Screening analytics
+
+security:
+  - BearerAuth: []
+
+paths:
+  /watchlist/screen:
+    post:
+      operationId: screenEntity
+      tags: [Screening]
+      summary: Screen individual or entity
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScreenRequest'
+      responses:
+        '200':
+          description: Screening result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScreenResult'
+    get:
+      operationId: listScreenings
+      tags: [Screening]
+      summary: List screenings
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Screenings list
+
+  /watchlist/screen/batch:
+    post:
+      operationId: screenBatch
+      tags: [Screening]
+      summary: Batch screening
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchScreenRequest'
+      responses:
+        '202':
+          description: Batch accepted
+
+  /watchlist/screen/{id}:
+    get:
+      operationId: getScreenResult
+      tags: [Screening]
+      summary: Get screening result
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Screening details
+
+  /watchlist/matches/{id}:
+    get:
+      operationId: getMatch
+      tags: [Matches]
+      summary: Get match details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Match details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Match'
+
+  /watchlist/matches/{id}/resolve:
+    post:
+      operationId: resolveMatch
+      tags: [Matches]
+      summary: Resolve match
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MatchResolution'
+      responses:
+        '200':
+          description: Match resolved
+
+  /watchlist/matches:
+    get:
+      operationId: listMatches
+      tags: [Matches]
+      summary: List pending matches
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: min_score
+          in: query
+          schema:
+            type: number
+      responses:
+        '200':
+          description: Matches list
+
+  /watchlist/monitor/subscribe:
+    post:
+      operationId: subscribeWatchlistMonitoring
+      tags: [Monitoring]
+      summary: Subscribe to monitoring
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WatchlistMonitorSubscription'
+      responses:
+        '201':
+          description: Subscription created
+
+  /watchlist/monitor/{id}:
+    delete:
+      operationId: unsubscribeWatchlistMonitoring
+      tags: [Monitoring]
+      summary: Unsubscribe
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Unsubscribed
+
+  /watchlist/monitor:
+    get:
+      operationId: listWatchlistMonitored
+      tags: [Monitoring]
+      summary: List monitored entities
+      responses:
+        '200':
+          description: Monitored list
+
+  /watchlist/monitor/{id}/alerts:
+    get:
+      operationId: getWatchlistAlerts
+      tags: [Monitoring]
+      summary: Get alerts
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Alerts
+
+  /watchlist/lists:
+    get:
+      operationId: listWatchlists
+      tags: [Lists]
+      summary: List available watchlists
+      responses:
+        '200':
+          description: Watchlists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WatchlistList'
+
+  /watchlist/lists/{id}:
+    get:
+      operationId: getWatchlist
+      tags: [Lists]
+      summary: Get watchlist details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Watchlist details
+
+  /watchlist/lists/custom:
+    post:
+      operationId: createCustomList
+      tags: [Lists]
+      summary: Create custom list
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                description:
+                  type: string
+                entity_type:
+                  type: string
+      responses:
+        '201':
+          description: List created
+
+  /watchlist/lists/custom/{id}/entries:
+    post:
+      operationId: addListEntry
+      tags: [Lists]
+      summary: Add entry to custom list
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomListEntry'
+      responses:
+        '201':
+          description: Entry added
+
+  /watchlist/lists/custom/{id}/entries/{entryId}:
+    delete:
+      operationId: removeListEntry
+      tags: [Lists]
+      summary: Remove entry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: entryId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Entry removed
+
+  /watchlist/analytics/summary:
+    get:
+      operationId: getWatchlistSummary
+      tags: [Analytics]
+      summary: Screening summary
+      responses:
+        '200':
+          description: Summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WatchlistSummary'
+
+  /watchlist/analytics/hits:
+    get:
+      operationId: getHitAnalysis
+      tags: [Analytics]
+      summary: Hit rate analysis
+      responses:
+        '200':
+          description: Hit analysis
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+
+  schemas:
+    ScreenRequest:
+      type: object
+      required: [entity]
+      properties:
+        entity:
+          type: object
+          required: [type, name]
+          properties:
+            type:
+              type: string
+              enum: [individual, entity, organization]
+            name:
+              type: string
+            date_of_birth:
+              type: string
+              format: date
+            nationality:
+              type: string
+            country_of_residence:
+              type: string
+            document_number:
+              type: string
+            registration_number:
+              type: string
+        lists:
+          type: array
+          items:
+            type: string
+            enum: [sanctions, pep, adverse_media]
+        threshold:
+          type: number
+          default: 0.85
+        include_aliases:
+          type: boolean
+        fuzziness:
+          type: string
+          enum: [exact, moderate, fuzzy]
+
+    ScreenResult:
+      type: object
+      properties:
+        id:
+          type: string
+        object:
+          type: string
+        status:
+          type: string
+          enum: [clear, potential_match, confirmed_hit]
+        hits:
+          type: integer
+        entity:
+          type: object
+        matches:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScreenMatch'
+        screened_against:
+          type: array
+          items:
+            type: object
+        risk_level:
+          type: string
+        processing_time_ms:
+          type: integer
+
+    ScreenMatch:
+      type: object
+      properties:
+        id:
+          type: string
+        list:
+          type: string
+        score:
+          type: number
+        status:
+          type: string
+        matched_entity:
+          type: object
+        match_details:
+          type: object
+
+    BatchScreenRequest:
+      type: object
+      required: [entities]
+      properties:
+        entities:
+          type: array
+          items:
+            type: object
+            properties:
+              reference_id:
+                type: string
+              type:
+                type: string
+              name:
+                type: string
+        lists:
+          type: array
+          items:
+            type: string
+        webhook_url:
+          type: string
+
+    Match:
+      type: object
+      properties:
+        id:
+          type: string
+        screening_id:
+          type: string
+        status:
+          type: string
+        screened_entity:
+          type: object
+        matched_entry:
+          type: object
+          properties:
+            list:
+              type: string
+            name:
+              type: string
+            aliases:
+              type: array
+              items:
+                type: string
+            category:
+              type: string
+            country:
+              type: string
+            details:
+              type: object
+            sources:
+              type: array
+              items:
+                type: object
+        match_score:
+          type: number
+        match_analysis:
+          type: object
+
+    MatchResolution:
+      type: object
+      required: [resolution]
+      properties:
+        resolution:
+          type: string
+          enum: [true_positive, false_positive, escalate]
+        reason:
+          type: string
+        notes:
+          type: string
+        resolved_by:
+          type: string
+        evidence:
+          type: object
+
+    WatchlistMonitorSubscription:
+      type: object
+      required: [entity]
+      properties:
+        entity:
+          type: object
+          properties:
+            type:
+              type: string
+            name:
+              type: string
+            reference_id:
+              type: string
+        lists:
+          type: array
+          items:
+            type: string
+        webhook_url:
+          type: string
+        check_frequency:
+          type: string
+
+    WatchlistList:
+      type: object
+      properties:
+        object:
+          type: string
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              name:
+                type: string
+              category:
+                type: string
+              entries:
+                type: integer
+              last_updated:
+                type: string
+                format: date
+
+    CustomListEntry:
+      type: object
+      required: [name, type]
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+        reason:
+          type: string
+        document_numbers:
+          type: array
+          items:
+            type: string
+        notes:
+          type: string
+
+    WatchlistSummary:
+      type: object
+      properties:
+        period:
+          type: string
+        screenings:
+          type: object
+          properties:
+            total:
+              type: integer
+            clear:
+              type: integer
+            potential_matches:
+              type: integer
+            confirmed_hits:
+              type: integer
+        hit_rate:
+          type: number
+        false_positive_rate:
+          type: number
+        by_list:
+          type: object
+        pending_review:
+          type: integer

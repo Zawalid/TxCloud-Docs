@@ -1,0 +1,121 @@
+---
+title: "Welcome to TXCloud"
+sidebarTitle: "Introduction"
+description: "The unified platform for identity verification, fraud prevention, and financial risk assessment across MENA and Africa"
+icon: "house"
+---
+
+<img
+  className="block dark:hidden"
+  src="/images/hero-light.png"
+  alt="TXCloud Platform"
+/>
+<img
+  className="hidden dark:block"
+  src="/images/hero-dark.png"
+  alt="TXCloud Platform"
+/>
+
+## What is TXCloud?
+
+TXCloud is a comprehensive API platform that provides **identity verification**, **fraud detection**, **transaction monitoring**, and **credit risk assessment** services tailored for emerging markets, with deep expertise in **MENA** and **Africa**.
+
+<CardGroup cols={2}>
+  <Card title="Identity Verification" icon="id-card" href="/guides/verify-identity">
+    Verify users with document OCR, face matching, and liveness detection
+  </Card>
+  <Card title="Fraud Prevention" icon="shield-halved" href="/guides/fraud-detection">
+    Detect and prevent fraud with device intelligence and behavioral analysis
+  </Card>
+  <Card title="Transaction Monitoring" icon="credit-card" href="/guides/transaction-monitoring">
+    Real-time transaction scoring with under 50ms response times
+  </Card>
+  <Card title="Credit Assessment" icon="chart-line" href="/guides/credit-assessment">
+    Alternative credit scoring with income verification and affordability checks
+  </Card>
+</CardGroup>
+
+## Why TXCloud?
+
+<AccordionGroup>
+  <Accordion title="🌍 Built for Emerging Markets" icon="globe">
+    Deep expertise in MENA and African document types, regulatory requirements, and local data sources. We support 50+ countries with localized document verification.
+  </Accordion>
+  <Accordion title="⚡ Real-Time Performance" icon="bolt">
+    Under 50ms response times for transaction scoring. 99.9% uptime SLA with global edge deployment.
+  </Accordion>
+  <Accordion title="🔒 Enterprise Security" icon="lock">
+    SOC 2 Type II certified. GDPR and local data residency compliance. End-to-end encryption.
+  </Accordion>
+  <Accordion title="🔌 Easy Integration" icon="plug">
+    RESTful APIs with SDKs for JavaScript, Python, Go, Java, and PHP. Comprehensive webhooks for async workflows.
+  </Accordion>
+</AccordionGroup>
+
+## Platform Overview
+
+TXCloud provides **7 API families** that work together seamlessly:
+
+| API | Purpose | Key Features |
+|-----|---------|--------------|
+| **Identity** | KYC verification | Document OCR, face match, liveness |
+| **FraudShield** | Fraud detection | Device intel, velocity, blocklists |
+| **TransactionGuard** | Payment security | Real-time scoring, pattern analysis |
+| **LendingRisk** | Credit assessment | Income verification, affordability |
+| **KYB** | Business verification | Company data, UBOs, directors |
+| **Watchlist** | Compliance screening | Sanctions, PEP, adverse media |
+| **DevEx** | Developer tools | API keys, webhooks, usage analytics |
+
+## Quick Start
+
+Get up and running in under 5 minutes:
+
+<Steps>
+  <Step title="Get Your API Key">
+    Sign up at [dashboard.txcloud.io](https://dashboard.txcloud.io) and create your first API key.
+  </Step>
+  <Step title="Install an SDK">
+    Choose your preferred language and install our official SDK.
+    ```bash
+    npm install @txcloud/sdk
+    ```
+  </Step>
+  <Step title="Make Your First Request">
+    Verify your first identity document:
+    ```javascript
+    import TXCloud from '@txcloud/sdk';
+    
+    const txcloud = new TXCloud('your_api_key');
+    
+    const verification = await txcloud.identity.verify({
+      document_front: 'base64_image...',
+      country: 'MA',
+      document_type: 'national_id'
+    });
+    
+    console.log(verification.status); // 'verified'
+    ```
+  </Step>
+</Steps>
+
+<Card title="Full Quickstart Guide" icon="rocket" href="/quickstart">
+  Follow our step-by-step guide to integrate TXCloud in your application
+</Card>
+
+## Support
+
+<CardGroup cols={3}>
+  <Card title="Documentation" icon="book" href="/guides/verify-identity">
+    Explore our comprehensive guides
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/overview">
+    Detailed API specifications
+  </Card>
+  <Card title="Contact Support" icon="headset" href="/resources/support">
+    Get help from our team
+  </Card>
+</CardGroup>
+
+<Note>
+  **Need help?** Join our [Discord community](https://discord.gg/txcloud) or email us at support@txcloud.io
+</Note>

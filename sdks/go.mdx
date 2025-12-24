@@ -1,0 +1,70 @@
+---
+title: "Go SDK"
+sidebarTitle: "Go"
+description: "Official TXCloud SDK for Go"
+icon: "golang"
+---
+
+## Installation
+
+```bash
+go get github.com/txcloud/txcloud-go
+```
+
+## Quick Start
+
+```go
+package main
+
+import (
+    "fmt"
+    "os"
+    "github.com/txcloud/txcloud-go"
+)
+
+func main() {
+    client := txcloud.NewClient(os.Getenv("TXCLOUD_API_KEY"))
+    
+    verification, err := client.Identity.Verify(&txcloud.VerifyRequest{
+        DocumentFront: documentBase64,
+        Country:       "MA",
+        DocumentType:  "national_id",
+    })
+    
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    fmt.Println("Status:", verification.Status)
+}
+```
+
+## Configuration
+
+```go
+client := txcloud.NewClient(
+    os.Getenv("TXCLOUD_API_KEY"),
+    txcloud.WithEnvironment("production"),
+    txcloud.WithTimeout(30 * time.Second),
+    txcloud.WithMaxRetries(3),
+)
+```
+
+## Error Handling
+
+```go
+verification, err := client.Identity.Verify(...)
+
+if err != nil {
+    switch e := err.(type) {
+    case *txcloud.ValidationError:
+        log.Printf("Validation failed: %s", e.Message)
+    case *txcloud.RateLimitError:
+        log.Printf("Rate limited, retry after: %d", e.RetryAfter)
+    case *txcloud.TXCloudError:
+        log.Printf("API error: %s", e.Code)
+    default:
+        log.Printf("Unknown error: %v", err)
+    }
+}
+```

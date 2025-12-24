@@ -1,0 +1,62 @@
+---
+title: "Pagination"
+sidebarTitle: "Pagination"
+description: "Paginating through list results"
+---
+
+## Cursor-Based Pagination
+
+List endpoints use cursor-based pagination for consistent results.
+
+## Parameters
+
+| Parameter | Type | Description |
+|-----------|------|-------------|
+| `limit` | integer | Results per page (1-100, default 20) |
+| `starting_after` | string | Cursor for next page |
+| `ending_before` | string | Cursor for previous page |
+
+## Example
+
+```bash
+# First page
+GET /v1/identity/verifications?limit=20
+
+# Next page
+GET /v1/identity/verifications?limit=20&starting_after=ver_abc123
+```
+
+## Response
+
+```json
+{
+  "object": "list",
+  "data": [
+    { "id": "ver_xyz789", ... },
+    { "id": "ver_abc123", ... }
+  ],
+  "has_more": true
+}
+```
+
+## Iterating All Results
+
+```javascript
+async function* getAllVerifications() {
+  let cursor = null;
+  
+  while (true) {
+    const page = await txcloud.identity.verifications.list({
+      limit: 100,
+      starting_after: cursor
+    });
+    
+    for (const item of page.data) {
+      yield item;
+    }
+    
+    if (!page.has_more) break;
+    cursor = page.data[page.data.length - 1].id;
+  }
+}
+```

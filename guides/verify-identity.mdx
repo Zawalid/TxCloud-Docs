@@ -1,0 +1,357 @@
+---
+title: "Verify User Identity"
+sidebarTitle: "Identity Verification"
+description: "Complete guide to verifying user identities with TXCloud"
+icon: "id-card"
+---
+
+## Overview
+
+This guide walks you through implementing identity verification in your application using TXCloud's Identity API.
+
+## Prerequisites
+
+<Check>TXCloud API key with `identity:write` permission</Check>
+<Check>Document images (ID card, passport, or driver's license)</Check>
+<Check>Selfie image (for face matching)</Check>
+
+## Quick Implementation
+
+<Steps>
+  <Step title="Capture Documents">
+    Collect document images from the user (front and back if applicable).
+  </Step>
+  <Step title="Capture Selfie">
+    Take a selfie photo for face matching and liveness detection.
+  </Step>
+  <Step title="Submit for Verification">
+    Send images to TXCloud API.
+  </Step>
+  <Step title="Handle Results">
+    Process the verification response.
+  </Step>
+</Steps>
+
+## Implementation
+
+### Basic Verification
+
+<CodeGroup>
+```javascript JavaScript
+import TXCloud from '@txcloud/sdk';
+import fs from 'fs';
+
+const txcloud = new TXCloud({ apiKey: process.env.TXCLOUD_API_KEY });
+
+async function verifyUser(userId, documentFrontPath, documentBackPath, selfiePath) {
+  // Read and encode images
+  const documentFront = fs.readFileSync(documentFrontPath, 'base64');
+  const documentBack = fs.readFileSync(documentBackPath, 'base64');
+  const selfie = fs.readFileSync(selfiePath, 'base64');
+  
+  // Submit verification
+  const verification = await txcloud.identity.verify({
+    document_front: documentFront,
+    document_back: documentBack,
+    selfie: selfie,
+    country: 'MA',
+    document_type: 'national_id',
+    checks: ['ocr', 'face_match', 'liveness', 'fraud'],
+    metadata: {
+      user_id: userId,
+      source: 'mobile_app'
+    }
+  });
+  
+  return verification;
+}
+```
+
+```python Python
+from txcloud import TXCloud
+import base64
+
+txcloud = TXCloud(api_key=os.environ.get("TXCLOUD_API_KEY"))
+
+def verify_user(user_id, document_front_path, document_back_path, selfie_path):
+    # Read and encode images
+    with open(document_front_path, 'rb') as f:
+        document_front = base64.b64encode(f.read()).decode()
+    with open(document_back_path, 'rb') as f:
+        document_back = base64.b64encode(f.read()).decode()
+    with open(selfie_path, 'rb') as f:
+        selfie = base64.b64encode(f.read()).decode()
+    
+    # Submit verification
+    verification = txcloud.identity.verify(
+        document_front=document_front,
+        document_back=document_back,
+        selfie=selfie,
+        country="MA",
+        document_type="national_id",
+        checks=["ocr", "face_match", "liveness", "fraud"],
+        metadata={
+            "user_id": user_id,
+            "source": "mobile_app"
+        }
+    )
+    
+    return verification
+```
+</CodeGroup>
+
+### Handling the Response
+
+```javascript
+const verification = await verifyUser(userId, docFront, docBack, selfie);
+
+console.log('Verification ID:', verification.id);
+console.log('Status:', verification.status);
+
+if (verification.status === 'verified') {
+  // ✅ User verified successfully
+  const userData = {
+    fullName: verification.extracted_data.full_name,
+    dateOfBirth: verification.extracted_data.date_of_birth,
+    documentNumber: verification.extracted_data.document_number,
+    nationality: verification.extracted_data.nationality,
+    expiryDate: verification.extracted_data.expiry_date
+  };
+  
+  await saveVerifiedUser(userId, userData);
+  
+} else if (verification.status === 'failed') {
+  // ❌ Verification failed
+  const failedChecks = verification.checks
+    .filter(c => c.status === 'failed');
+  
+  console.log('Failed checks:', failedChecks);
+  
+  // Handle specific failures
+  for (const check of failedChecks) {
+    switch (check.type) {
+      case 'face_match':
+        // Selfie doesn't match document
+        await requestNewSelfie(userId);
+        break;
+      case 'liveness':
+        // Not a live person
+        await flagSuspiciousUser(userId);
+        break;
+      case 'fraud':
+        // Document tampering detected
+        await blockUser(userId);
+        break;
+    }
+  }
+}
+```
+
+## Supported Documents
+
+### Morocco 🇲🇦
+
+| Document Type | Code | Back Required |
+|---------------|------|---------------|
+| National ID (CIN) | `national_id` | Yes |
+| Passport | `passport` | No |
+| Driver's License | `driving_license` | Yes |
+| Residence Permit | `residence_permit` | Yes |
+
+### Other Countries
+
+<Accordion title="View All Supported Countries">
+| Country | Documents | 
+|---------|-----------|
+| 🇩🇿 Algeria | National ID, Passport |
+| 🇪🇬 Egypt | National ID, Passport |
+| 🇸🇦 Saudi Arabia | National ID, Iqama, Passport |
+| 🇦🇪 UAE | Emirates ID, Passport |
+| 🇳🇬 Nigeria | NIN, Passport, Driver's License |
+| 🇰🇪 Kenya | National ID, Passport |
+| 🇿🇦 South Africa | ID Card, Passport |
+| 🇫🇷 France | CNI, Passport |
+
+[See full list →](/resources/country-coverage)
+</Accordion>
+
+## Verification Checks
+
+### OCR Extraction
+
+Extracts text from the document:
+
+```json
+{
+  "extracted_data": {
+    "full_name": "Mohammed El Amrani",
+    "first_name": "Mohammed",
+    "last_name": "El Amrani",
+    "date_of_birth": "1990-05-15",
+    "document_number": "AE123456",
+    "nationality": "Moroccan",
+    "gender": "M",
+    "expiry_date": "2028-05-14",
+    "issue_date": "2018-05-15",
+    "address": "123 Rue Mohammed V, Casablanca"
+  }
+}
+```
+
+### Face Match
+
+Compares selfie to document photo:
+
+```json
+{
+  "checks": {
+    "face_match": {
+      "status": "passed",
+      "similarity": 0.92,
+      "threshold": 0.80,
+      "confidence": 0.95
+    }
+  }
+}
+```
+
+### Liveness Detection
+
+Verifies the selfie is from a live person:
+
+```json
+{
+  "checks": {
+    "liveness": {
+      "status": "passed",
+      "confidence": 0.98,
+      "signals": {
+        "is_live": true,
+        "spoof_type": null,
+        "quality_score": 0.95
+      }
+    }
+  }
+}
+```
+
+### Fraud Detection
+
+Checks for document tampering:
+
+```json
+{
+  "checks": {
+    "fraud": {
+      "status": "passed",
+      "risk_score": 120,
+      "risk_level": "low",
+      "signals": {
+        "tampering": false,
+        "photoshop": false,
+        "screen_capture": false,
+        "printed_copy": false
+      }
+    }
+  }
+}
+```
+
+## Mobile Integration
+
+### Session-Based Flow
+
+For mobile apps, use the session-based flow:
+
+```javascript
+// 1. Create a session
+const session = await txcloud.identity.sessions.create({
+  country: 'MA',
+  document_type: 'national_id',
+  checks: ['ocr', 'face_match', 'liveness'],
+  expires_in: 900 // 15 minutes
+});
+
+// 2. Get the session ID for the mobile app
+const sessionId = session.id;
+
+// 3. Mobile app uploads documents using session ID
+// (handled by mobile SDK)
+
+// 4. Complete the session when done
+const verification = await txcloud.identity.sessions.complete(sessionId);
+```
+
+### React Native Example
+
+```jsx
+import { TXCloudVerification } from '@txcloud/react-native-sdk';
+
+function VerificationScreen({ userId }) {
+  const handleComplete = async (result) => {
+    if (result.status === 'verified') {
+      navigation.navigate('Dashboard');
+    } else {
+      Alert.alert('Verification Failed', result.error);
+    }
+  };
+  
+  return (
+    <TXCloudVerification
+      sessionId={sessionId}
+      onComplete={handleComplete}
+      theme="light"
+      locale="fr"
+    />
+  );
+}
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Image Quality" icon="image">
+    Ensure high-quality images:
+    - **Resolution**: Minimum 1280x720
+    - **Format**: JPEG or PNG
+    - **Size**: Under 10MB
+    - **Lighting**: Even, no shadows
+    - **Focus**: Sharp, no blur
+  </Accordion>
+  
+  <Accordion title="User Experience" icon="user">
+    Guide users through the process:
+    - Show preview before submission
+    - Provide real-time feedback on image quality
+    - Offer retry for failed captures
+    - Display clear error messages
+  </Accordion>
+  
+  <Accordion title="Error Handling" icon="triangle-exclamation">
+    Handle all possible outcomes:
+    - Verification passed
+    - Verification failed (with reasons)
+    - Document not supported
+    - Image quality too low
+    - Network errors
+  </Accordion>
+  
+  <Accordion title="Data Storage" icon="database">
+    Store verification results:
+    - Save verification ID for reference
+    - Store extracted data securely
+    - Implement data retention policies
+    - Enable GDPR deletion requests
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Add Fraud Detection" icon="shield" href="/guides/fraud-detection">
+    Enhance verification with fraud signals
+  </Card>
+  <Card title="API Reference" icon="code" href="/api-reference/overview">
+    Explore all Identity endpoints
+  </Card>
+</CardGroup>
