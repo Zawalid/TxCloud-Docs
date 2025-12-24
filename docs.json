@@ -15,6 +15,12 @@
   "background": {
     "style": "gradient"
   },
+  "announcement": {
+    "content": "New: French documentation now available! [Switch to French](/fr/introduction)",
+    "background": "linear-gradient(90deg, #0052CC 0%, #0066FF 100%)",
+    "textColor": "#ffffff",
+    "dismissible": true
+  },
   "topbarLinks": [
     {
       "name": "Dashboard",
