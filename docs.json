@@ -408,6 +408,44 @@
   "seo": {
     "indexHiddenPages": false
   },
+  "metadata": {
+    "og:site_name": "TXCloud Documentation",
+    "og:image": "/images/og-image.svg",
+    "og:type": "website",
+    "og:locale": "en_US",
+    "twitter:card": "summary_large_image",
+    "twitter:site": "@txcloud",
+    "twitter:creator": "@txcloud",
+    "robots": "index, follow",
+    "author": "TXCloud"
+  },
+  "contextual": {
+    "options": [
+      "copy",
+      "view",
+      "chatgpt",
+      "claude",
+      "perplexity",
+      {
+        "title": "Contact Support",
+        "description": "Get help from our team",
+        "icon": "headset",
+        "href": "mailto:support@txcloud.io"
+      },
+      {
+        "title": "Share on X",
+        "description": "Share this page on X",
+        "icon": "x-twitter",
+        "href": {
+          "base": "https://x.com/intent/tweet",
+          "query": [
+            { "key": "text", "value": "Check out this TXCloud documentation: $title" },
+            { "key": "url", "value": "$url" }
+          ]
+        }
+      }
+    ]
+  },
   "modeToggle": {
     "default": "light",
     "isHidden": false
