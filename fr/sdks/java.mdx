@@ -1,0 +1,49 @@
+---
+title: "SDK Java"
+sidebarTitle: "Java"
+description: "SDK TXCloud officiel pour Java"
+icon: "java"
+---
+
+## Installation
+
+### Maven
+
+```xml
+<dependency>
+    <groupId>io.txcloud</groupId>
+    <artifactId>txcloud-java</artifactId>
+    <version>1.0.0</version>
+</dependency>
+```
+
+### Gradle
+
+```groovy
+implementation 'io.txcloud:txcloud-java:1.0.0'
+```
+
+## Demarrage Rapide
+
+```java
+import io.txcloud.TXCloud;
+import io.txcloud.model.Verification;
+
+public class Example {
+    public static void main(String[] args) {
+        TXCloud txcloud = new TXCloud.Builder()
+            .apiKey(System.getenv("TXCLOUD_API_KEY"))
+            .build();
+
+        Verification verification = txcloud.identity().verify(
+            VerifyRequest.builder()
+                .documentFront(documentBase64)
+                .country("MA")
+                .documentType("national_id")
+                .build()
+        );
+
+        System.out.println("Statut: " + verification.getStatus());
+    }
+}
+```

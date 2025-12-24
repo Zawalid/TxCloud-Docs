@@ -1,0 +1,244 @@
+---
+title: "Authentification"
+sidebarTitle: "Authentification"
+description: "Apprenez a authentifier vos requetes API"
+icon: "key"
+---
+
+## Apercu
+
+TXCloud utilise des **cles API** pour authentifier les requetes. Toutes les requetes API doivent inclure votre cle API dans l'en-tete `Authorization` en utilisant l'authentification par jeton Bearer.
+
+```bash
+Authorization: Bearer txc_live_votre_cle_api_ici
+```
+
+## Types de Cles API
+
+TXCloud fournit deux types de cles API :
+
+| Type | Prefixe | Cas d'Utilisation |
+|------|---------|-------------------|
+| **Test/Sandbox** | `txc_test_` | Developpement et tests |
+| **Live/Production** | `txc_live_` | Applications en production |
+
+<Warning>
+  **N'exposez jamais vos cles API dans le code cote client.** Les cles API ne doivent etre utilisees que dans les applications cote serveur.
+</Warning>
+
+## Obtenir Votre Cle API
+
+<Steps>
+  <Step title="Connectez-vous au Tableau de Bord">
+    Allez sur [dashboard.txcloud.io](https://dashboard.txcloud.io) et connectez-vous.
+  </Step>
+  <Step title="Accedez aux Cles API">
+    Cliquez sur **Parametres** dans la barre laterale, puis selectionnez **Cles API**.
+  </Step>
+  <Step title="Creez une Nouvelle Cle">
+    Cliquez sur **Creer une Cle API** et configurez :
+    - **Nom** : Un nom descriptif (ex: "Serveur Production")
+    - **Environnement** : Test ou Live
+    - **Permissions** : Selectionnez les APIs auxquelles la cle peut acceder
+    - **Liste Blanche IP** : (Optionnel) Restreindre a des IPs specifiques
+  </Step>
+  <Step title="Copiez Votre Cle">
+    Copiez la cle immediatement - elle ne sera plus affichee !
+  </Step>
+</Steps>
+
+## Faire des Requetes Authentifiees
+
+<CodeGroup>
+```javascript JavaScript
+import TXCloud from '@txcloud/sdk';
+
+// Le SDK gere l'authentification automatiquement
+const txcloud = new TXCloud({
+  apiKey: process.env.TXCLOUD_API_KEY
+});
+
+// Toutes les requetes sont automatiquement authentifiees
+const verification = await txcloud.identity.verify({
+  document_front: '...',
+  country: 'MA'
+});
+```
+
+```python Python
+from txcloud import TXCloud
+import os
+
+# Initialisez avec votre cle API
+txcloud = TXCloud(api_key=os.environ.get("TXCLOUD_API_KEY"))
+
+# Toutes les requetes sont automatiquement authentifiees
+verification = txcloud.identity.verify(
+    document_front="...",
+    country="MA"
+)
+```
+
+```bash cURL
+# Incluez l'en-tete Authorization dans chaque requete
+curl -X POST https://api.txcloud.io/v1/identity/verify \
+  -H "Authorization: Bearer txc_live_votre_cle_api" \
+  -H "Content-Type: application/json" \
+  -d '{"document_front": "...", "country": "MA"}'
+```
+
+```go Go
+import "github.com/txcloud/txcloud-go"
+
+client := txcloud.NewClient(os.Getenv("TXCLOUD_API_KEY"))
+
+verification, err := client.Identity.Verify(&txcloud.VerifyRequest{
+    DocumentFront: "...",
+    Country: "MA",
+})
+```
+</CodeGroup>
+
+## Permissions des Cles API
+
+Lors de la creation d'une cle API, vous pouvez restreindre l'acces a des APIs specifiques :
+
+| Permission | Description |
+|------------|-------------|
+| `identity:read` | Lire les resultats de verification |
+| `identity:write` | Creer de nouvelles verifications |
+| `fraud:read` | Lire les signaux de fraude et analytics |
+| `fraud:write` | Configurer les regles de fraude et listes de blocage |
+| `transactions:read` | Lire les scores de transaction |
+| `transactions:write` | Scorer les transactions, mettre a jour les regles |
+| `lending:read` | Lire les evaluations de credit |
+| `lending:write` | Creer des evaluations, telecharger des releves |
+| `kyb:read` | Lire les verifications d'entreprise |
+| `kyb:write` | Creer des verifications d'entreprise |
+| `watchlist:read` | Lire les resultats de filtrage |
+| `watchlist:write` | Filtrer les entites, gerer les listes |
+| `developers:read` | Lire l'utilisation API et les logs |
+| `developers:write` | Gerer les webhooks et parametres |
+
+<Tip>
+  Suivez le **principe du moindre privilege** - n'accordez que les permissions dont chaque cle a besoin.
+</Tip>
+
+## Liste Blanche IP
+
+Pour une securite supplementaire, vous pouvez restreindre les cles API a des adresses IP specifiques :
+
+```json
+{
+  "name": "Cle API Production",
+  "allowed_ips": [
+    "203.0.113.50",
+    "203.0.113.51",
+    "10.0.0.0/8"  // Notation CIDR supportee
+  ]
+}
+```
+
+<Note>
+  La liste blanche IP est optionnelle mais recommandee pour les cles de production.
+</Note>
+
+## Rotation des Cles
+
+Nous recommandons de faire tourner vos cles API periodiquement :
+
+<Steps>
+  <Step title="Creez une Nouvelle Cle">
+    Creez une nouvelle cle API avec les memes permissions.
+  </Step>
+  <Step title="Mettez a Jour Votre Application">
+    Deployez la nouvelle cle dans votre application.
+  </Step>
+  <Step title="Verifiez que la Nouvelle Cle Fonctionne">
+    Confirmez que les requetes reussissent avec la nouvelle cle.
+  </Step>
+  <Step title="Revoquez l'Ancienne Cle">
+    Supprimez l'ancienne cle API du tableau de bord.
+  </Step>
+</Steps>
+
+<Warning>
+  La revocation d'une cle est immediate et irreversible. Assurez-vous d'avoir mis a jour toutes les applications au prealable.
+</Warning>
+
+## En-tetes Requis
+
+Chaque requete API doit inclure ces en-tetes :
+
+| En-tete | Requis | Description |
+|---------|--------|-------------|
+| `Authorization` | Oui | Jeton Bearer avec votre cle API |
+| `Content-Type` | Oui (POST/PUT) | `application/json` |
+| `Idempotency-Key` | Recommande | Cle unique pour des re-essais surs |
+| `X-Request-ID` | Optionnel | Votre ID de requete pour le tracage |
+
+```bash
+curl -X POST https://api.txcloud.io/v1/identity/verify \
+  -H "Authorization: Bearer txc_live_xxx" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: id-requete-unique-123" \
+  -H "X-Request-ID: mon-id-trace-456" \
+  -d '{"document_front": "..."}'
+```
+
+## Erreurs d'Authentification
+
+| Code Erreur | Statut HTTP | Description |
+|-------------|-------------|-------------|
+| `unauthorized` | 401 | Cle API manquante ou invalide |
+| `forbidden` | 403 | La cle n'a pas les permissions requises |
+| `ip_not_allowed` | 403 | Requete depuis une IP non autorisee |
+| `key_revoked` | 401 | La cle API a ete revoquee |
+| `key_expired` | 401 | La cle API a expire |
+
+### Exemple de Reponse d'Erreur
+
+```json
+{
+  "error": {
+    "code": "unauthorized",
+    "message": "Cle API invalide fournie",
+    "type": "authentication_error",
+    "request_id": "req_a1b2c3d4"
+  }
+}
+```
+
+## Bonnes Pratiques
+
+<AccordionGroup>
+  <Accordion title="Utilisez des Variables d'Environnement" icon="leaf">
+    Stockez les cles API dans des variables d'environnement, pas dans le code :
+    ```bash
+    export TXCLOUD_API_KEY="txc_live_xxx"
+    ```
+  </Accordion>
+  <Accordion title="Utilisez des Cles Differentes par Environnement" icon="layer-group">
+    Creez des cles separees pour le developpement, le staging et la production.
+  </Accordion>
+  <Accordion title="Surveillez l'Utilisation des Cles" icon="chart-simple">
+    Verifiez regulierement le tableau de bord pour detecter toute activite inhabituelle.
+  </Accordion>
+  <Accordion title="Activez la Liste Blanche IP" icon="shield">
+    Restreignez les cles de production aux IPs de serveur connues.
+  </Accordion>
+  <Accordion title="Faites Tourner les Cles Regulierement" icon="rotate">
+    Faites tourner les cles de production tous les 90 jours.
+  </Accordion>
+</AccordionGroup>
+
+## Prochaines Etapes
+
+<CardGroup cols={2}>
+  <Card title="Limites de Debit" icon="gauge-high" href="/fr/rate-limits">
+    Comprendre les limites de debit API
+  </Card>
+  <Card title="Gestion des Erreurs" icon="triangle-exclamation" href="/fr/resources/error-codes">
+    Gerer les erreurs avec elegance
+  </Card>
+</CardGroup>

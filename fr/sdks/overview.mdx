@@ -1,0 +1,99 @@
+---
+title: "Apercu des SDK"
+sidebarTitle: "Apercu"
+description: "SDK TXCloud officiels pour les langages populaires"
+icon: "code"
+---
+
+## SDK Officiels
+
+TXCloud fournit des SDK officiels pour les langages de programmation les plus populaires :
+
+<CardGroup cols={2}>
+  <Card title="JavaScript/TypeScript" icon="js" href="/fr/sdks/javascript">
+    npm install @txcloud/sdk
+  </Card>
+  <Card title="Python" icon="python" href="/fr/sdks/python">
+    pip install txcloud
+  </Card>
+  <Card title="Go" icon="golang" href="/fr/sdks/go">
+    go get github.com/txcloud/txcloud-go
+  </Card>
+  <Card title="Java" icon="java" href="/fr/sdks/java">
+    Dependance Maven/Gradle
+  </Card>
+  <Card title="PHP" icon="php" href="/fr/sdks/php">
+    composer require txcloud/txcloud-php
+  </Card>
+</CardGroup>
+
+## Fonctionnalites
+
+Tous les SDK incluent :
+
+- Couverture API complete
+- TypeScript/definitions de types
+- Re-essais automatiques avec backoff exponentiel
+- Support des cles d'idempotence
+- Verification de signature webhook
+- Gestion d'erreurs complete
+
+## Exemple Rapide
+
+<CodeGroup>
+```javascript JavaScript
+import TXCloud from '@txcloud/sdk';
+
+const txcloud = new TXCloud({ apiKey: process.env.TXCLOUD_API_KEY });
+
+const verification = await txcloud.identity.verify({
+  document_front: documentBase64,
+  country: 'MA'
+});
+```
+
+```python Python
+from txcloud import TXCloud
+
+txcloud = TXCloud(api_key=os.environ["TXCLOUD_API_KEY"])
+
+verification = txcloud.identity.verify(
+    document_front=document_base64,
+    country="MA"
+)
+```
+
+```go Go
+client := txcloud.NewClient(os.Getenv("TXCLOUD_API_KEY"))
+
+verification, err := client.Identity.Verify(&txcloud.VerifyRequest{
+    DocumentFront: documentBase64,
+    Country: "MA",
+})
+```
+</CodeGroup>
+
+## SDK Mobile
+
+Pour les applications mobiles :
+
+| Plateforme | Package |
+|------------|---------|
+| React Native | `@txcloud/react-native-sdk` |
+| iOS | `TXCloudSDK` (CocoaPods/SPM) |
+| Android | `com.txcloud:sdk` (Maven) |
+| Flutter | `txcloud_flutter` |
+
+## SDK Communautaires
+
+SDK maintenus par la communaute :
+
+| Langage | Package | Mainteneur |
+|---------|---------|------------|
+| Ruby | `txcloud-ruby` | Communaute |
+| C# | `TXCloud.NET` | Communaute |
+| Rust | `txcloud-rs` | Communaute |
+
+<Note>
+  Les SDK communautaires ne sont pas officiellement supportes. Utilisez-les a votre propre discretion.
+</Note>

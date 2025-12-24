@@ -1,0 +1,365 @@
+---
+title: "Surveillance des Transactions"
+sidebarTitle: "Surveillance des Transactions"
+description: "Scorez les transactions en temps reel avec TXCloud TransactionGuard"
+icon: "credit-card"
+---
+
+## Apercu
+
+TransactionGuard fournit un scoring de transactions en temps reel pour prevenir la fraude au paiement. Scorez les transactions en moins de 50ms et obtenez des decisions instantanees d'approbation/revision/refus.
+
+## Demarrage Rapide
+
+<CodeGroup>
+```javascript JavaScript
+const score = await txcloud.transactions.score({
+  amount: 5000,
+  currency: 'MAD',
+  type: 'p2p_transfer',
+
+  sender: {
+    user_id: 'usr_abc123',
+    device_id: 'dev_xyz789',
+    ip_address: '102.45.67.89'
+  },
+
+  recipient: {
+    type: 'phone',
+    value: '+212612345678',
+    name: 'Mohammed El Amrani'
+  }
+});
+
+console.log('Decision:', score.decision);  // 'approve'
+console.log('Score de Risque:', score.risk_score);  // 180
+```
+
+```python Python
+score = txcloud.transactions.score(
+    amount=5000,
+    currency="MAD",
+    type="p2p_transfer",
+    sender={
+        "user_id": "usr_abc123",
+        "device_id": "dev_xyz789"
+    },
+    recipient={
+        "type": "phone",
+        "value": "+212612345678"
+    }
+)
+
+print(f"Decision: {score.decision}")
+print(f"Score de Risque: {score.risk_score}")
+```
+</CodeGroup>
+
+## Logique de Decision
+
+TransactionGuard retourne l'une des quatre decisions :
+
+| Decision | Plage de Score | Action |
+|----------|----------------|--------|
+| `approve` | 0-300 | Proceder avec la transaction |
+| `review` | 301-600 | Mettre en file pour revision manuelle |
+| `challenge` | 601-800 | Demander une authentification supplementaire |
+| `decline` | 801-1000 | Bloquer la transaction |
+
+```javascript
+switch (score.decision) {
+  case 'approve':
+    await processPayment(transaction);
+    break;
+
+  case 'review':
+    await queueForReview(transaction, score);
+    // Peut encore traiter avec delai
+    break;
+
+  case 'challenge':
+    await requestOTP(user);
+    // Traiter apres verification OTP
+    break;
+
+  case 'decline':
+    await blockTransaction(transaction);
+    await notifyUser('Transaction refusee pour des raisons de securite');
+    break;
+}
+```
+
+## Reponse de Score
+
+```json
+{
+  "id": "trs_a1b2c3d4e5f6",
+  "created_at": "2025-01-15T10:30:00Z",
+  "processing_time_ms": 45,
+
+  "decision": "approve",
+  "risk_score": 180,
+  "risk_level": "low",
+
+  "signals": {
+    "positive": ["known_recipient", "normal_amount", "trusted_device"],
+    "negative": [],
+    "neutral": ["first_transfer_this_week"]
+  },
+
+  "checks": {
+    "velocity": {
+      "passed": true,
+      "daily_count": 2,
+      "daily_limit": 10
+    },
+    "amount": {
+      "passed": true,
+      "vs_average": 1.2
+    },
+    "recipient": {
+      "passed": true,
+      "is_known": true,
+      "trust_level": "high"
+    },
+    "device": {
+      "passed": true,
+      "is_trusted": true
+    }
+  }
+}
+```
+
+## Types de Transaction
+
+| Type | Description |
+|------|-------------|
+| `p2p_transfer` | Transfert de personne a personne |
+| `bill_payment` | Paiement de facture/service public |
+| `merchant_payment` | Paiement a un commercant |
+| `cash_withdrawal` | Retrait DAB/agent |
+| `bank_transfer` | Virement bancaire |
+| `international_transfer` | Transfert transfrontalier |
+| `mobile_topup` | Recharge mobile/airtime |
+
+## Profils de Risque Utilisateur
+
+TransactionGuard construit des profils de risque a partir de l'historique des transactions :
+
+```javascript
+// Obtenir le profil de transaction de l'utilisateur
+const profile = await txcloud.transactions.users.getProfile(userId);
+
+console.log('Niveau de Confiance:', profile.trust_level);
+console.log('Total Transactions:', profile.statistics.total_transactions);
+console.log('Montant Moyen:', profile.statistics.average_amount);
+
+// Le profil inclut les patterns
+console.log('Plage Montant Typique:', profile.patterns.typical_amount_range);
+console.log('Destinataires Typiques:', profile.patterns.typical_recipients);
+console.log('Horaires Typiques:', profile.patterns.typical_times);
+```
+
+### Reponse
+
+```json
+{
+  "user_id": "usr_abc123",
+  "trust_level": "high",
+  "trust_score": 850,
+
+  "statistics": {
+    "total_transactions": 156,
+    "total_amount": 245000,
+    "average_amount": 1571,
+    "max_amount": 15000
+  },
+
+  "patterns": {
+    "typical_amount_range": [500, 5000],
+    "typical_recipients": 8,
+    "typical_frequency": "weekly",
+    "typical_channels": ["mobile_app"],
+    "typical_times": ["09:00-18:00"]
+  },
+
+  "risk_factors": {
+    "fraud_reports": 0,
+    "disputes": 0,
+    "chargebacks": 0
+  }
+}
+```
+
+## Verification du Destinataire
+
+Verifiez le risque du destinataire avant d'afficher la confirmation :
+
+```javascript
+const recipientCheck = await txcloud.transactions.recipients.check({
+  type: 'phone',
+  value: '+212612345678',
+  sender_user_id: userId
+});
+
+// Afficher un avertissement de risque si necessaire
+if (recipientCheck.risk_level === 'high') {
+  await showWarning('Ce destinataire a ete signale. Procedez avec prudence.');
+}
+
+// Afficher les infos de relation
+if (recipientCheck.relationship.is_known) {
+  console.log(`Vous avez envoye a ce destinataire ${recipientCheck.relationship.times_sent} fois`);
+}
+```
+
+## Regles Personnalisees
+
+Creez des regles specifiques aux transactions :
+
+```javascript
+// Transfert international de haute valeur
+await txcloud.transactions.rules.create({
+  name: 'International Haute Valeur',
+  condition: "type = 'international_transfer' AND amount > 20000",
+  action: 'review',
+  score_adjustment: 300
+});
+
+// Nouveau destinataire gros montant
+await txcloud.transactions.rules.create({
+  name: 'Nouveau Destinataire Haute Valeur',
+  condition: "recipient.times_sent = 0 AND amount > 5000",
+  action: 'challenge',
+  score_adjustment: 200
+});
+
+// Horaire inhabituel
+await txcloud.transactions.rules.create({
+  name: 'Nuit Haute Valeur',
+  condition: "(time.hour >= 23 OR time.hour <= 5) AND amount > 5000",
+  action: 'review',
+  score_adjustment: 150
+});
+```
+
+## Boucle de Retour
+
+Signalez les resultats des transactions pour ameliorer le scoring :
+
+```javascript
+// Signaler une transaction completee
+await txcloud.transactions.report({
+  score_id: 'trs_a1b2c3d4e5f6',
+  outcome: 'completed',
+  fraud_reported: false
+});
+
+// Signaler une fraude
+await txcloud.transactions.report({
+  score_id: 'trs_xyz789',
+  outcome: 'fraud_confirmed',
+  fraud_reported: true,
+  notes: 'Client a signale une transaction non autorisee'
+});
+```
+
+<Tip>
+  Les retours reguliers ameliorent la precision du modele. Signalez tous les resultats, surtout les fraudes confirmees.
+</Tip>
+
+## Analytics
+
+Surveillez les patterns de transaction :
+
+```javascript
+const analytics = await txcloud.transactions.analytics.summary({
+  period: '30d'
+});
+
+console.log('Total Transactions:', analytics.volume.total_transactions);
+console.log('Approuvees:', analytics.decisions.approved);
+console.log('Refusees:', analytics.decisions.declined);
+console.log('Taux de Fraude:', analytics.fraud.fraud_rate);
+```
+
+## Exemple d'Integration
+
+Flux de paiement complet avec TransactionGuard :
+
+```javascript
+async function processPayment(userId, amount, recipientPhone) {
+  // 1. Scorer la transaction
+  const score = await txcloud.transactions.score({
+    amount,
+    currency: 'MAD',
+    type: 'p2p_transfer',
+    sender: { user_id: userId },
+    recipient: { type: 'phone', value: recipientPhone }
+  });
+
+  // 2. Gerer la decision
+  if (score.decision === 'decline') {
+    throw new Error('Transaction refusee pour des raisons de securite');
+  }
+
+  if (score.decision === 'challenge') {
+    // Demander OTP
+    const otpVerified = await verifyOTP(userId);
+    if (!otpVerified) {
+      throw new Error('Verification OTP echouee');
+    }
+  }
+
+  if (score.decision === 'review') {
+    // Mettre en file pour revision mais permettre de continuer
+    await queueForReview(score.id);
+  }
+
+  // 3. Traiter le paiement
+  const payment = await executePayment(userId, amount, recipientPhone);
+
+  // 4. Signaler le resultat
+  await txcloud.transactions.report({
+    score_id: score.id,
+    outcome: 'completed'
+  });
+
+  return payment;
+}
+```
+
+## Bonnes Pratiques
+
+<AccordionGroup>
+  <Accordion title="Appelez Tot dans le Flux" icon="forward">
+    Scorez les transactions avant d'afficher la confirmation pour detecter la fraude tot.
+  </Accordion>
+
+  <Accordion title="Incluez Toutes les Donnees Disponibles" icon="database">
+    Plus vous fournissez de contexte, meilleur est le scoring :
+    - ID d'appareil
+    - Adresse IP
+    - Infos de session
+    - Contexte utilisateur
+  </Accordion>
+
+  <Accordion title="Gerez Toutes les Decisions" icon="list-check">
+    Implementez des flux appropries pour les quatre decisions (approuver, reviser, challenger, refuser).
+  </Accordion>
+
+  <Accordion title="Signalez Tous les Resultats" icon="flag">
+    Retournez les transactions completees ET les fraudes pour ameliorer le modele.
+  </Accordion>
+</AccordionGroup>
+
+## Prochaines Etapes
+
+<CardGroup cols={2}>
+  <Card title="Evaluation de Credit" icon="chart-line" href="/fr/guides/credit-assessment">
+    Ajoutez le scoring de risque credit
+  </Card>
+  <Card title="Reference API" icon="code" href="/api-reference/overview">
+    Explorez les endpoints TransactionGuard
+  </Card>
+</CardGroup>

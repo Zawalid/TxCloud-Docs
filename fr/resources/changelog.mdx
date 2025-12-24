@@ -1,0 +1,54 @@
+---
+title: "Journal des Modifications"
+sidebarTitle: "Journal des Modifications"
+description: "Mises a jour et changements de l'API TXCloud"
+icon: "clock-rotate-left"
+---
+
+## 2025
+
+<Update label="Janvier 2025" description="v1.5.0">
+### Ajoute
+- API LendingRisk : Analyse de releves bancaires
+- FraudShield : Detection d'identite synthetique
+- TransactionGuard : Scoring de risque commercant
+
+### Ameliore
+- Identity : Traitement OCR 15% plus rapide
+- Toutes les APIs : Messages d'erreur ameliores
+</Update>
+
+<Update label="Decembre 2024" description="v1.4.0">
+### Ajoute
+- API KYB : Ameliorations de detection UBO
+- Watchlist : Filtrage des medias negatifs
+- Outils Developpeur : Retention des logs de requetes
+
+### Corrige
+- Identity : Cas limites dans la correspondance faciale
+</Update>
+
+## Versioning de l'API
+
+TXCloud utilise un versioning base sur la date :
+
+```
+https://api.txcloud.io/v1
+```
+
+La version actuelle de l'API est `2025-01-01`.
+
+### En-tete de Version
+
+Vous pouvez fixer une version specifique :
+
+```bash
+curl https://api.txcloud.io/v1/... \
+  -H "TXCloud-Version: 2025-01-01"
+```
+
+## Politique de Depreciation
+
+- Fonctionnalites depreciees avec 6 mois de preavis
+- Changements majeurs annonces 12 mois a l'avance
+- Notifications par email pour toutes les depreciations

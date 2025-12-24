@@ -1,0 +1,271 @@
+---
+title: "Demarrage Rapide"
+sidebarTitle: "Demarrage Rapide"
+description: "Soyez operationnel avec TXCloud en moins de 5 minutes"
+icon: "rocket"
+---
+
+## Prerequis
+
+Avant de commencer, vous aurez besoin de :
+
+- Un compte TXCloud ([inscrivez-vous ici](https://dashboard.txcloud.io/signup))
+- Une cle API depuis votre tableau de bord
+- Node.js 18+ (pour le SDK JavaScript) ou Python 3.8+ (pour le SDK Python)
+
+## Etape 1 : Obtenez Votre Cle API
+
+<Steps>
+  <Step title="Creez un Compte">
+    Allez sur [dashboard.txcloud.io](https://dashboard.txcloud.io) et inscrivez-vous pour un compte gratuit.
+  </Step>
+  <Step title="Accedez aux Cles API">
+    Dans votre tableau de bord, allez dans **Parametres** puis **Cles API**.
+  </Step>
+  <Step title="Creez une Nouvelle Cle">
+    Cliquez sur **Creer une Cle API**, donnez-lui un nom et selectionnez les permissions dont vous avez besoin.
+
+    <Warning>
+      Conservez votre cle API en securite. Elle ne sera affichee qu'une seule fois !
+    </Warning>
+  </Step>
+</Steps>
+
+Votre cle API ressemblera a ceci :
+```
+txc_live_a1b2c3d4e5f6g7h8i9j0...
+```
+
+## Etape 2 : Installez le SDK
+
+<Tabs>
+  <Tab title="JavaScript">
+    ```bash
+    npm install @txcloud/sdk
+    # ou
+    yarn add @txcloud/sdk
+    # ou
+    pnpm add @txcloud/sdk
+    ```
+  </Tab>
+  <Tab title="Python">
+    ```bash
+    pip install txcloud
+    ```
+  </Tab>
+  <Tab title="Go">
+    ```bash
+    go get github.com/txcloud/txcloud-go
+    ```
+  </Tab>
+  <Tab title="cURL">
+    Pas d'installation necessaire ! Utilisez cURL directement :
+    ```bash
+    curl https://api.txcloud.io/v1/identity/verify \
+      -H "Authorization: Bearer VOTRE_CLE_API"
+    ```
+  </Tab>
+</Tabs>
+
+## Etape 3 : Initialisez le Client
+
+<CodeGroup>
+```javascript JavaScript
+import TXCloud from '@txcloud/sdk';
+
+const txcloud = new TXCloud({
+  apiKey: process.env.TXCLOUD_API_KEY,
+  // Optionnel : utilisez sandbox pour les tests
+  environment: 'sandbox' // ou 'production'
+});
+```
+
+```python Python
+from txcloud import TXCloud
+
+txcloud = TXCloud(
+    api_key=os.environ.get("TXCLOUD_API_KEY"),
+    environment="sandbox"  # ou "production"
+)
+```
+
+```go Go
+import "github.com/txcloud/txcloud-go"
+
+client := txcloud.NewClient(
+    os.Getenv("TXCLOUD_API_KEY"),
+    txcloud.WithEnvironment("sandbox"),
+)
+```
+
+```bash cURL
+# Definissez votre cle API comme variable d'environnement
+export TXCLOUD_API_KEY="txc_live_votre_cle_ici"
+
+# Toutes les requetes utilisent l'en-tete Authorization
+curl https://api.txcloud.io/v1/... \
+  -H "Authorization: Bearer $TXCLOUD_API_KEY"
+```
+</CodeGroup>
+
+## Etape 4 : Verifiez Votre Premiere Identite
+
+Verifions un document d'identite d'utilisateur :
+
+<CodeGroup>
+```javascript JavaScript
+// Verifier un document d'identite
+const verification = await txcloud.identity.verify({
+  document_front: fs.readFileSync('id_front.jpg', 'base64'),
+  document_back: fs.readFileSync('id_back.jpg', 'base64'),
+  selfie: fs.readFileSync('selfie.jpg', 'base64'),
+  country: 'MA',
+  document_type: 'national_id',
+  checks: ['ocr', 'face_match', 'liveness', 'fraud']
+});
+
+console.log('Statut:', verification.status);
+console.log('Nom:', verification.extracted_data.full_name);
+console.log('Correspondance Faciale:', verification.checks.face_match.match);
+```
+
+```python Python
+# Verifier un document d'identite
+with open('id_front.jpg', 'rb') as f:
+    document_front = base64.b64encode(f.read()).decode()
+
+verification = txcloud.identity.verify(
+    document_front=document_front,
+    document_back=document_back,
+    selfie=selfie,
+    country="MA",
+    document_type="national_id",
+    checks=["ocr", "face_match", "liveness", "fraud"]
+)
+
+print(f"Statut: {verification.status}")
+print(f"Nom: {verification.extracted_data.full_name}")
+```
+
+```bash cURL
+curl -X POST https://api.txcloud.io/v1/identity/verify \
+  -H "Authorization: Bearer $TXCLOUD_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "document_front": "image_encodee_base64...",
+    "country": "MA",
+    "document_type": "national_id",
+    "checks": ["ocr", "face_match", "liveness"]
+  }'
+```
+</CodeGroup>
+
+### Reponse
+
+```json
+{
+  "id": "ver_a1b2c3d4e5f6",
+  "status": "verified",
+  "created_at": "2025-01-15T10:30:00Z",
+
+  "extracted_data": {
+    "full_name": "Mohammed El Amrani",
+    "date_of_birth": "1990-05-15",
+    "document_number": "AE123456",
+    "nationality": "Marocain",
+    "expiry_date": "2028-05-14"
+  },
+
+  "checks": {
+    "ocr": { "status": "passed", "confidence": 0.95 },
+    "face_match": { "status": "passed", "similarity": 0.92 },
+    "liveness": { "status": "passed", "confidence": 0.98 },
+    "fraud": { "status": "passed", "risk_score": 120 }
+  }
+}
+```
+
+<Check>
+  **Felicitations !** Vous avez verifie avec succes votre premiere identite avec TXCloud.
+</Check>
+
+## Etape 5 : Configurez les Webhooks (Optionnel)
+
+Pour les workflows asynchrones, configurez des webhooks pour recevoir des mises a jour en temps reel :
+
+<CodeGroup>
+```javascript JavaScript
+// Creer un endpoint webhook
+const webhook = await txcloud.developers.webhooks.create({
+  url: 'https://votreapp.com/webhooks/txcloud',
+  events: [
+    'identity.verification.completed',
+    'identity.verification.failed',
+    'fraud.signal.detected'
+  ],
+  secret: 'whsec_votre_secret_ici'
+});
+```
+
+```python Python
+webhook = txcloud.developers.webhooks.create(
+    url="https://votreapp.com/webhooks/txcloud",
+    events=[
+        "identity.verification.completed",
+        "identity.verification.failed"
+    ]
+)
+```
+</CodeGroup>
+
+<Card title="En Savoir Plus sur les Webhooks" icon="webhook" href="/fr/concepts/webhooks">
+  Configurez et securisez vos endpoints webhook
+</Card>
+
+## Prochaines Etapes
+
+Maintenant que vous avez fait votre premier appel API, explorez plus de fonctionnalites :
+
+<CardGroup cols={2}>
+  <Card title="Detection de Fraude" icon="shield-halved" href="/fr/guides/fraud-detection">
+    Ajoutez l'intelligence des appareils et les signaux de fraude
+  </Card>
+  <Card title="Scoring de Transactions" icon="credit-card" href="/fr/guides/transaction-monitoring">
+    Scorez les transactions en temps reel
+  </Card>
+  <Card title="Evaluation de Credit" icon="chart-line" href="/fr/guides/credit-assessment">
+    Verifiez les revenus et evaluez la solvabilite
+  </Card>
+  <Card title="Reference API" icon="code" href="/api-reference/overview">
+    Explorez tous les endpoints disponibles
+  </Card>
+</CardGroup>
+
+## Sandbox vs Production
+
+<Info>
+  TXCloud fournit un **environnement sandbox** pour les tests. Les requetes sandbox n'affectent pas les donnees reelles et utilisent des identifiants de test.
+</Info>
+
+| Environnement | URL de Base | Prefixe Cle API |
+|---------------|-------------|-----------------|
+| Sandbox | `https://sandbox.api.txcloud.io/v1` | `txc_test_...` |
+| Production | `https://api.txcloud.io/v1` | `txc_live_...` |
+
+<Warning>
+  Utilisez toujours le sandbox pour le developpement et les tests. Les appels API de production peuvent entrainer des frais.
+</Warning>
+
+## Besoin d'Aide ?
+
+<CardGroup cols={3}>
+  <Card title="Discord" icon="discord" href="https://discord.gg/txcloud">
+    Rejoignez notre communaute
+  </Card>
+  <Card title="Support Email" icon="envelope" href="mailto:support@txcloud.io">
+    support@txcloud.io
+  </Card>
+  <Card title="Page de Statut" icon="signal" href="https://status.txcloud.io">
+    Verifiez le statut de l'API
+  </Card>
+</CardGroup>

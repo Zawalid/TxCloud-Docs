@@ -1,0 +1,43 @@
+---
+title: "Types de Documents"
+sidebarTitle: "Types de Documents"
+description: "Types de documents supportes par pays"
+icon: "id-card"
+---
+
+## Codes de Types de Documents
+
+| Code | Nom | Exemple |
+|------|-----|---------|
+| `national_id` | Carte d'Identite Nationale | CIN Maroc, Emirates ID EAU |
+| `passport` | Passeport | Passeport de tout pays |
+| `driving_license` | Permis de Conduire | Permis de tout pays |
+| `residence_permit` | Titre de Sejour | Titre de Sejour UE, Iqama GCC |
+| `voter_id` | Carte d'Electeur | VIN Nigeria |
+
+## Documents Maroc
+
+| Document | Code | Verso Requis |
+|----------|------|--------------|
+| Carte d'Identite Nationale (CIN) | `national_id` | Oui |
+| Passeport | `passport` | Non |
+| Permis de Conduire | `driving_license` | Oui |
+| Carte de Sejour | `residence_permit` | Oui |
+
+## Champs Extraits
+
+Champs courants extraits des documents :
+
+| Champ | Description |
+|-------|-------------|
+| `full_name` | Nom complet |
+| `first_name` | Prenom |
+| `last_name` | Nom de famille |
+| `date_of_birth` | Date de naissance |
+| `document_number` | Numero de document |
+| `expiry_date` | Date d'expiration |
+| `issue_date` | Date d'emission |
+| `nationality` | Nationalite |
+| `gender` | Genre (M/F) |
+| `address` | Adresse enregistree |
+| `mrz` | Donnees Zone Lisible par Machine |

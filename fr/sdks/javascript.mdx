@@ -1,0 +1,136 @@
+---
+title: "SDK JavaScript"
+sidebarTitle: "JavaScript"
+description: "SDK TXCloud officiel pour JavaScript et TypeScript"
+icon: "js"
+---
+
+## Installation
+
+```bash
+npm install @txcloud/sdk
+# ou
+yarn add @txcloud/sdk
+# ou
+pnpm add @txcloud/sdk
+```
+
+## Demarrage Rapide
+
+```javascript
+import TXCloud from '@txcloud/sdk';
+
+const txcloud = new TXCloud({
+  apiKey: process.env.TXCLOUD_API_KEY,
+  environment: 'production' // ou 'sandbox'
+});
+
+// Verifier l'identite
+const verification = await txcloud.identity.verify({
+  document_front: documentBase64,
+  country: 'MA',
+  document_type: 'national_id'
+});
+
+console.log(verification.status);
+```
+
+## Configuration
+
+```javascript
+const txcloud = new TXCloud({
+  apiKey: 'txc_live_xxx',
+  environment: 'production',
+  timeout: 30000, // 30 secondes
+  maxRetries: 3
+});
+```
+
+## Support TypeScript
+
+Definitions TypeScript completes incluses :
+
+```typescript
+import TXCloud, { Verification, VerifyRequest } from '@txcloud/sdk';
+
+const request: VerifyRequest = {
+  document_front: '...',
+  country: 'MA'
+};
+
+const verification: Verification = await txcloud.identity.verify(request);
+```
+
+## Gestion des Erreurs
+
+```javascript
+import { TXCloudError, ValidationError, RateLimitError } from '@txcloud/sdk';
+
+try {
+  const result = await txcloud.identity.verify({ ... });
+} catch (error) {
+  if (error instanceof ValidationError) {
+    console.log('Validation echouee:', error.message);
+  } else if (error instanceof RateLimitError) {
+    console.log('Limite atteinte, reessayer apres:', error.retryAfter);
+  } else if (error instanceof TXCloudError) {
+    console.log('Erreur API:', error.code);
+  }
+}
+```
+
+## Verification Webhook
+
+```javascript
+import { verifyWebhookSignature } from '@txcloud/sdk';
+
+app.post('/webhooks', (req, res) => {
+  const isValid = verifyWebhookSignature(
+    req.body,
+    req.headers['x-txcloud-signature'],
+    webhookSecret
+  );
+
+  if (!isValid) {
+    return res.status(401).send('Signature invalide');
+  }
+
+  // Traiter le webhook
+});
+```
+
+## Reference API
+
+Toutes les methodes API sont disponibles :
+
+```javascript
+// Identity
+txcloud.identity.verify()
+txcloud.identity.verifications.get()
+txcloud.identity.verifications.list()
+
+// Fraud
+txcloud.fraud.devices.register()
+txcloud.fraud.duplicates.search()
+txcloud.fraud.rules.create()
+
+// Transactions
+txcloud.transactions.score()
+txcloud.transactions.report()
+
+// Lending
+txcloud.lending.assess()
+txcloud.lending.statements.upload()
+
+// KYB
+txcloud.kyb.verify()
+txcloud.kyb.companies.getUBOs()
+
+// Watchlist
+txcloud.watchlist.screen()
+txcloud.watchlist.screenBatch()
+
+// Developers
+txcloud.developers.webhooks.create()
+txcloud.developers.usage.summary()
+```

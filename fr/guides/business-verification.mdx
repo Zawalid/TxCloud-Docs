@@ -1,0 +1,190 @@
+---
+title: "Verification d'Entreprise"
+sidebarTitle: "Verification d'Entreprise"
+description: "Verifiez les entreprises avec l'API KYB de TXCloud"
+icon: "building"
+---
+
+## Apercu
+
+L'API KYB (Know Your Business) verifie les entites commerciales, recupere les donnees de l'entreprise, identifie les Beneficiaires Effectifs Ultimes (UBO) et filtre les dirigeants contre les listes de surveillance.
+
+## Demarrage Rapide
+
+```javascript
+const verification = await txcloud.kyb.verify({
+  company: {
+    name: 'Acme Corp SARL',
+    registration_number: 'RC12345',
+    country: 'MA'
+  },
+  checks: ['registry', 'ownership', 'directors', 'screening']
+});
+
+console.log('Statut:', verification.status);
+console.log('Raison Sociale:', verification.company.legal_name);
+console.log('UBOs:', verification.ubos);
+```
+
+## Reponse de Verification
+
+```json
+{
+  "id": "kyb_a1b2c3d4",
+  "status": "verified",
+
+  "company": {
+    "legal_name": "Acme Corporation SARL",
+    "trading_name": "Acme Corp",
+    "registration_number": "RC12345",
+    "tax_id": "12345678",
+    "incorporation_date": "2015-03-20",
+    "legal_form": "SARL",
+    "status": "active",
+    "address": {
+      "street": "123 Boulevard Mohammed V",
+      "city": "Casablanca",
+      "country": "MA"
+    },
+    "industry": "Technologie",
+    "employee_count": "50-100"
+  },
+
+  "directors": [
+    {
+      "name": "Mohammed El Amrani",
+      "role": "CEO",
+      "nationality": "Marocain",
+      "appointed_date": "2015-03-20",
+      "screening": { "status": "clear", "pep": false, "sanctions": false }
+    }
+  ],
+
+  "ubos": [
+    {
+      "name": "Mohammed El Amrani",
+      "ownership_percentage": 60,
+      "is_ubo": true,
+      "verification_status": "verified"
+    },
+    {
+      "name": "Fatima Benali",
+      "ownership_percentage": 40,
+      "is_ubo": true,
+      "verification_status": "verified"
+    }
+  ],
+
+  "screening": {
+    "status": "clear",
+    "checks": {
+      "sanctions": "clear",
+      "pep": "clear",
+      "adverse_media": "clear"
+    }
+  }
+}
+```
+
+## Recherche d'Entreprise
+
+Recherchez des entreprises avant la verification :
+
+```javascript
+const results = await txcloud.kyb.companies.search({
+  query: 'Acme Corp',
+  country: 'MA'
+});
+
+for (const company of results.data) {
+  console.log(`${company.name} - ${company.registration_number}`);
+}
+```
+
+## Structure de Propriete
+
+Obtenez la chaine de propriete complete :
+
+```javascript
+const ownership = await txcloud.kyb.companies.getOwnership(companyId);
+
+console.log('Structure de propriete:');
+for (const owner of ownership.shareholders) {
+  console.log(`${owner.name}: ${owner.percentage}%`);
+  if (owner.type === 'company') {
+    // Entreprise imbriquee - a ses propres actionnaires
+    console.log('  Detenue par:', owner.shareholders);
+  }
+}
+```
+
+## Detection des UBO
+
+Identifiez les Beneficiaires Effectifs Ultimes (25%+ de propriete) :
+
+```javascript
+const ubos = await txcloud.kyb.companies.getUBOs(companyId);
+
+for (const ubo of ubos.data) {
+  console.log(`UBO: ${ubo.name}`);
+  console.log(`  Propriete: ${ubo.ownership_percentage}%`);
+  console.log(`  Type de Controle: ${ubo.control_type}`);
+  console.log(`  Verifie: ${ubo.verification_status}`);
+}
+```
+
+## Filtrage des Dirigeants
+
+Filtrez les dirigeants contre les listes de surveillance :
+
+```javascript
+const directors = await txcloud.kyb.companies.getDirectors(companyId);
+
+for (const director of directors.data) {
+  if (director.screening.pep) {
+    console.log(`${director.name} est une PPE`);
+  }
+  if (director.screening.sanctions) {
+    console.log(`${director.name} a une correspondance de sanctions`);
+  }
+}
+```
+
+## Registres Disponibles
+
+| Pays | Registre | Couverture |
+|------|----------|------------|
+| Maroc | OMPIC | Complete |
+| Egypte | GAFI | Complete |
+| EAU | DED/MOEC | Complete |
+| Arabie Saoudite | MCI | Complete |
+| Nigeria | CAC | Complete |
+| Kenya | BRS | Complete |
+| Afrique du Sud | CIPC | Complete |
+
+## Bonnes Pratiques
+
+<AccordionGroup>
+  <Accordion title="Obtenez Toujours les UBOs" icon="users">
+    Les reglementations exigent d'identifier tous les UBOs avec 25%+ de propriete.
+  </Accordion>
+
+  <Accordion title="Filtrez Tous les Dirigeants" icon="magnifying-glass">
+    Filtrez les dirigeants et UBOs contre les listes de sanctions et PPE.
+  </Accordion>
+
+  <Accordion title="Surveillez les Changements" icon="bell">
+    Abonnez-vous a la surveillance pour les changements de propriete.
+  </Accordion>
+</AccordionGroup>
+
+## Prochaines Etapes
+
+<CardGroup cols={2}>
+  <Card title="Filtrage Watchlist" icon="magnifying-glass" href="/fr/guides/watchlist-screening">
+    Filtrez les individus et entites
+  </Card>
+  <Card title="Reference API" icon="code" href="/api-reference/overview">
+    Explorez les endpoints KYB
+  </Card>
+</CardGroup>

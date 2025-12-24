@@ -1,0 +1,393 @@
+---
+title: "Detection de Fraude"
+sidebarTitle: "Detection de Fraude"
+description: "Protegez votre plateforme contre la fraude avec TXCloud FraudShield"
+icon: "shield-halved"
+---
+
+## Apercu
+
+FraudShield fournit des capacites completes de detection de fraude incluant l'empreinte d'appareil, la detection de doublons, les controles de velocite et les regles personnalisees.
+
+## Fonctionnalites Cles
+
+<CardGroup cols={2}>
+  <Card title="Intelligence d'Appareil" icon="mobile">
+    Empreinte des appareils et detection des emulateurs, VPN et patterns suspects
+  </Card>
+  <Card title="Detection de Doublons" icon="clone">
+    Trouvez quand le meme document ou visage est utilise sur plusieurs comptes
+  </Card>
+  <Card title="Controles de Velocite" icon="gauge-high">
+    Prevenez les abus avec la limitation de debit et la detection de patterns
+  </Card>
+  <Card title="Regles Personnalisees" icon="gavel">
+    Creez des regles adaptees a votre logique metier
+  </Card>
+</CardGroup>
+
+## Empreinte d'Appareil
+
+Enregistrez et suivez les appareils pour identifier les patterns suspects :
+
+<CodeGroup>
+```javascript JavaScript
+// Enregistrer une empreinte d'appareil
+const device = await txcloud.fraud.devices.register({
+  fingerprint: {
+    user_agent: navigator.userAgent,
+    screen_resolution: `${screen.width}x${screen.height}`,
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    language: navigator.language,
+    platform: navigator.platform,
+    canvas_hash: await getCanvasHash(),
+    webgl_hash: await getWebGLHash()
+  },
+  ip_address: clientIp,
+  user_id: userId
+});
+
+console.log('ID Appareil:', device.id);
+console.log('Score de Risque:', device.risk_score);
+console.log('Niveau de Risque:', device.risk_level);
+
+// Verifier les signaux suspects
+if (device.signals.is_vpn) {
+  console.log('VPN detecte');
+}
+if (device.signals.is_emulator) {
+  console.log('Emulateur detecte');
+}
+```
+
+```python Python
+device = txcloud.fraud.devices.register(
+    fingerprint={
+        "user_agent": user_agent,
+        "screen_resolution": screen_resolution,
+        "timezone": timezone,
+        "language": language,
+        "platform": platform,
+        "canvas_hash": canvas_hash,
+        "webgl_hash": webgl_hash
+    },
+    ip_address=client_ip,
+    user_id=user_id
+)
+
+print(f"ID Appareil: {device.id}")
+print(f"Score de Risque: {device.risk_score}")
+
+if device.signals.is_vpn:
+    print("VPN detecte")
+```
+</CodeGroup>
+
+### Reponse Appareil
+
+```json
+{
+  "id": "dev_a1b2c3d4e5f6",
+  "risk_score": 250,
+  "risk_level": "medium",
+  "is_new": false,
+  "first_seen": "2024-12-01T08:00:00Z",
+  "times_seen": 47,
+
+  "signals": {
+    "is_bot": false,
+    "is_emulator": false,
+    "is_vpn": true,
+    "is_proxy": false,
+    "is_tor": false,
+    "is_datacenter": false,
+    "timezone_mismatch": false
+  },
+
+  "ip_analysis": {
+    "ip": "102.45.67.89",
+    "country": "MA",
+    "city": "Casablanca",
+    "isp": "Maroc Telecom",
+    "is_vpn": true,
+    "vpn_provider": "NordVPN"
+  },
+
+  "linked_users": ["usr_123", "usr_456"],
+  "linked_accounts": 2
+}
+```
+
+<Warning>
+  Un appareil lie a plusieurs comptes peut indiquer un partage de compte ou une fraude.
+</Warning>
+
+## Detection de Doublons
+
+Verifiez si un document ou un visage a deja ete utilise :
+
+```javascript
+// Rechercher des doublons
+const duplicates = await txcloud.fraud.duplicates.search({
+  type: 'face',  // ou 'document'
+  image: selfieBase64,
+  threshold: 0.85  // seuil de similarite
+});
+
+if (duplicates.matches.length > 0) {
+  console.log('Doublon trouve!');
+
+  for (const match of duplicates.matches) {
+    console.log(`ID Correspondance: ${match.id}`);
+    console.log(`Similarite: ${match.similarity}`);
+    console.log(`Verification originale: ${match.verification_id}`);
+  }
+}
+```
+
+### Reponse
+
+```json
+{
+  "id": "dup_a1b2c3d4",
+  "type": "face",
+  "matches_found": true,
+  "matches": [
+    {
+      "id": "match_xyz789",
+      "verification_id": "ver_abc123",
+      "similarity": 0.94,
+      "created_at": "2024-11-15T10:00:00Z",
+      "user_id": "usr_different_user"
+    }
+  ]
+}
+```
+
+## Controles de Velocite
+
+Prevenez les abus avec des regles basees sur le debit :
+
+```javascript
+// Verifier la velocite avant d'autoriser l'action
+const velocityCheck = await txcloud.fraud.velocity.check({
+  user_id: userId,
+  action: 'verification_attempt',
+  window: '1h',
+  ip_address: clientIp,
+  device_id: deviceId
+});
+
+if (!velocityCheck.allowed) {
+  console.log('Limite de debit depassee');
+  console.log(`Reessayer apres: ${velocityCheck.retry_after}s`);
+  throw new Error('Trop de tentatives. Veuillez reessayer plus tard.');
+}
+```
+
+### Creer des Regles de Velocite
+
+```javascript
+// Creer une regle de velocite
+await txcloud.fraud.velocity.rules.create({
+  name: 'Limite de Verification',
+  description: 'Max 3 tentatives de verification par heure',
+  action: 'verification_attempt',
+  limit: 3,
+  window: '1h',
+  scope: 'user_id',  // ou 'ip_address', 'device_id'
+  on_exceed: 'block',
+  cooldown: '30m'
+});
+```
+
+## Regles de Fraude Personnalisees
+
+Creez des regles adaptees a votre entreprise :
+
+```javascript
+// Creer une regle personnalisee
+const rule = await txcloud.fraud.rules.create({
+  name: 'Nouvel Utilisateur Haut Risque',
+  description: 'Signaler les nouveaux utilisateurs avec VPN et transactions de haute valeur',
+  condition: `
+    user.age_days < 7 AND
+    device.is_vpn = true AND
+    transaction.amount > 10000
+  `,
+  action: 'flag',
+  score_adjustment: 300,
+  enabled: true
+});
+```
+
+### Conditions des Regles
+
+| Variable | Description |
+|----------|-------------|
+| `user.age_days` | Jours depuis l'inscription |
+| `user.verification_count` | Nombre de verifications |
+| `device.is_vpn` | VPN detecte |
+| `device.is_emulator` | Emulateur detecte |
+| `device.linked_accounts` | Comptes utilisant l'appareil |
+| `transaction.amount` | Montant de la transaction |
+| `velocity.daily_count` | Actions aujourd'hui |
+
+### Actions des Regles
+
+| Action | Description |
+|--------|-------------|
+| `flag` | Ajouter un drapeau, continuer le traitement |
+| `review` | Mettre en file d'attente pour revision manuelle |
+| `block` | Bloquer l'action |
+| `challenge` | Demander une verification supplementaire |
+
+## Gestion des Listes de Blocage
+
+Gerez les entites bloquees :
+
+```javascript
+// Ajouter a la liste de blocage
+await txcloud.fraud.blocklist.add({
+  type: 'device',
+  value: deviceId,
+  reason: 'confirmed_fraud',
+  expires_in: null  // permanent
+});
+
+// Verifier la liste de blocage
+const check = await txcloud.fraud.blocklist.check({
+  type: 'device',
+  value: deviceId
+});
+
+if (check.blocked) {
+  console.log('Appareil bloque');
+  console.log(`Raison: ${check.reason}`);
+}
+```
+
+### Types de Liste de Blocage
+
+| Type | Exemple |
+|------|---------|
+| `device` | ID d'empreinte d'appareil |
+| `ip` | Adresse IP ou CIDR |
+| `email` | Adresse email |
+| `phone` | Numero de telephone |
+| `document` | Numero de document |
+
+## Signaux de Fraude
+
+Signalez et suivez les signaux de fraude :
+
+```javascript
+// Signaler un signal de fraude
+const signal = await txcloud.fraud.signals.report({
+  type: 'chargeback',
+  user_id: userId,
+  verification_id: verificationId,
+  details: {
+    amount: 5000,
+    currency: 'MAD',
+    transaction_id: 'txn_123'
+  }
+});
+
+// Plus tard, confirmer ou rejeter
+await txcloud.fraud.signals.confirm(signal.id, {
+  notes: 'Chargeback confirme par la banque'
+});
+
+// Ou rejeter un faux positif
+await txcloud.fraud.signals.dismiss(signal.id, {
+  notes: 'Client a resolu le litige'
+});
+```
+
+## Integration avec Identity
+
+FraudShield s'integre automatiquement avec la verification Identity :
+
+```javascript
+// Les signaux de fraude sont inclus dans la reponse de verification
+const verification = await txcloud.identity.verify({
+  document_front: doc,
+  country: 'MA',
+  checks: ['ocr', 'face_match', 'liveness', 'fraud']
+});
+
+// Acceder aux signaux de fraude
+console.log('Controle fraude:', verification.checks.fraud);
+// {
+//   status: 'passed',
+//   risk_score: 150,
+//   duplicate_detected: false,
+//   device_risk: 'low',
+//   signals: ['known_device', 'normal_velocity']
+// }
+```
+
+## Analytics
+
+Surveillez les patterns de fraude :
+
+```javascript
+const summary = await txcloud.fraud.analytics.summary({
+  period: '30d'
+});
+
+console.log('Total signaux:', summary.signals.total);
+console.log('Fraude confirmee:', summary.signals.confirmed);
+console.log('Taux faux positifs:', summary.false_positive_rate);
+
+// Obtenir les tendances
+const trends = await txcloud.fraud.analytics.trends({
+  period: '30d',
+  granularity: 'daily'
+});
+```
+
+## Bonnes Pratiques
+
+<AccordionGroup>
+  <Accordion title="Superposez Vos Defenses" icon="layer-group">
+    Utilisez plusieurs signaux de fraude ensemble :
+    - Empreinte d'appareil
+    - Controles de velocite
+    - Detection de doublons
+    - Regles personnalisees
+  </Accordion>
+
+  <Accordion title="Ajustez Vos Seuils" icon="sliders">
+    Commencez conservateur et ajustez selon les donnees :
+    - Semaine 1-2 : Journalisez tous les drapeaux, ne bloquez pas
+    - Semaine 3-4 : Analysez les patterns
+    - Semaine 5+ : Implementez les regles de blocage
+  </Accordion>
+
+  <Accordion title="Surveillez les Faux Positifs" icon="chart-line">
+    Suivez et minimisez les faux positifs :
+    - Revisez regulierement les utilisateurs bloques
+    - Fournissez un processus d'appel
+    - Ajustez les regles selon les retours
+  </Accordion>
+
+  <Accordion title="Retournez la Fraude Confirmee" icon="rotate">
+    Signalez la fraude confirmee pour ameliorer la detection :
+    - Utilisez signals.report() pour les nouvelles fraudes
+    - Confirmez ou rejetez les signaux signes
+    - Cela entraine les modeles ML
+  </Accordion>
+</AccordionGroup>
+
+## Prochaines Etapes
+
+<CardGroup cols={2}>
+  <Card title="Surveillance des Transactions" icon="credit-card" href="/fr/guides/transaction-monitoring">
+    Ajoutez le scoring de transactions en temps reel
+  </Card>
+  <Card title="Reference API" icon="code" href="/api-reference/overview">
+    Explorez les endpoints FraudShield
+  </Card>
+</CardGroup>

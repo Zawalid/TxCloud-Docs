@@ -1,0 +1,180 @@
+---
+title: "Limites de Debit"
+sidebarTitle: "Limites de Debit"
+description: "Comprendre les limites de debit de l'API TXCloud et comment les gerer"
+icon: "gauge-high"
+---
+
+## Apercu
+
+TXCloud implemente des limites de debit pour assurer une utilisation equitable et maintenir la stabilite de l'API. Les limites de debit varient selon le plan et le type d'endpoint.
+
+## Niveaux de Limites de Debit
+
+| Plan | Requetes/Minute | Requetes/Jour | Limite de Burst |
+|------|-----------------|---------------|-----------------|
+| **Gratuit** | 60 | 1 000 | 10 |
+| **Starter** | 300 | 10 000 | 50 |
+| **Growth** | 1 000 | 100 000 | 100 |
+| **Enterprise** | Personnalise | Personnalise | Personnalise |
+
+<Note>
+  **Limite de burst** est le nombre maximum de requetes concurrentes autorisees.
+</Note>
+
+## Limites Specifiques par Endpoint
+
+Certains endpoints ont des limites supplementaires :
+
+| Endpoint | Limite | Fenetre |
+|----------|--------|---------|
+| `POST /identity/verify` | 100/min | Par cle API |
+| `POST /transactions/score` | 1 000/min | Par cle API |
+| `POST /watchlist/screen` | 500/min | Par cle API |
+| `GET /*/analytics/*` | 30/min | Par cle API |
+
+## En-tetes de Limite de Debit
+
+Chaque reponse API inclut des informations sur les limites de debit dans les en-tetes :
+
+```http
+HTTP/1.1 200 OK
+X-RateLimit-Limit: 1000
+X-RateLimit-Remaining: 950
+X-RateLimit-Reset: 1705312800
+X-RateLimit-Window: 60
+```
+
+| En-tete | Description |
+|---------|-------------|
+| `X-RateLimit-Limit` | Requetes maximum autorisees dans la fenetre |
+| `X-RateLimit-Remaining` | Requetes restantes dans la fenetre actuelle |
+| `X-RateLimit-Reset` | Timestamp Unix de reinitialisation de la fenetre |
+| `X-RateLimit-Window` | Duree de la fenetre en secondes |
+
+## Gerer les Limites de Debit
+
+Lorsque vous depassez la limite de debit, vous recevrez une reponse `429 Too Many Requests` :
+
+```json
+{
+  "error": {
+    "code": "rate_limit_exceeded",
+    "message": "Trop de requetes. Veuillez reessayer apres 30 secondes.",
+    "type": "rate_limit_error",
+    "retry_after": 30
+  }
+}
+```
+
+### Implementer une Logique de Re-essai
+
+<CodeGroup>
+```javascript JavaScript
+async function makeRequestWithRetry(fn, maxRetries = 3) {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      if (error.status === 429 && attempt < maxRetries - 1) {
+        const retryAfter = error.headers['retry-after'] || 30;
+        console.log(`Limite atteinte. Re-essai dans ${retryAfter}s...`);
+        await sleep(retryAfter * 1000);
+        continue;
+      }
+      throw error;
+    }
+  }
+}
+
+// Utilisation
+const verification = await makeRequestWithRetry(() =>
+  txcloud.identity.verify({ ... })
+);
+```
+
+```python Python
+import time
+from txcloud.exceptions import RateLimitError
+
+def make_request_with_retry(fn, max_retries=3):
+    for attempt in range(max_retries):
+        try:
+            return fn()
+        except RateLimitError as e:
+            if attempt < max_retries - 1:
+                retry_after = e.retry_after or 30
+                print(f"Limite atteinte. Re-essai dans {retry_after}s...")
+                time.sleep(retry_after)
+                continue
+            raise
+
+# Utilisation
+verification = make_request_with_retry(
+    lambda: txcloud.identity.verify(...)
+)
+```
+</CodeGroup>
+
+## Bonnes Pratiques
+
+<AccordionGroup>
+  <Accordion title="Implementez un Backoff Exponentiel" icon="clock-rotate-left">
+    Utilisez un backoff exponentiel pour les re-essais :
+    ```javascript
+    const delay = Math.min(1000 * Math.pow(2, attempt), 30000);
+    await sleep(delay);
+    ```
+  </Accordion>
+
+  <Accordion title="Utilisez le Cache" icon="memory">
+    Mettez en cache les reponses lorsque possible pour reduire les appels API :
+    - Mettez en cache les resultats de verification par ID
+    - Mettez en cache les profils de risque utilisateur
+    - Mettez en cache les donnees de configuration
+  </Accordion>
+
+  <Accordion title="Groupez les Requetes" icon="layer-group">
+    Utilisez les endpoints batch lorsque disponibles :
+    ```javascript
+    // Au lieu de plusieurs appels individuels
+    await txcloud.watchlist.screenBatch({
+      entities: [entity1, entity2, entity3]
+    });
+    ```
+  </Accordion>
+
+  <Accordion title="Surveillez l'Utilisation" icon="chart-line">
+    Suivez votre utilisation API dans le tableau de bord pour anticiper les problemes de limite de debit.
+  </Accordion>
+</AccordionGroup>
+
+## Augmenter Vos Limites
+
+Besoin de limites de debit plus elevees ? Les options incluent :
+
+1. **Passez a un plan superieur** - Les plans superieurs ont des limites plus elevees
+2. **Demandez une augmentation de limite** - Contactez les ventes pour des limites personnalisees
+3. **Optimisez votre integration** - Reduisez les appels inutiles
+
+<Card title="Contacter les Ventes" icon="phone" href="mailto:sales@txcloud.io">
+  Discutez des limites de debit personnalisees pour les besoins entreprise
+</Card>
+
+## Surveiller l'Utilisation
+
+Suivez votre utilisation API dans le tableau de bord :
+
+```javascript
+// Obtenir votre utilisation actuelle
+const usage = await txcloud.developers.usage.summary({
+  period: '30d'
+});
+
+console.log('Total requetes:', usage.total_requests);
+console.log('Limites atteintes:', usage.rate_limit_hits);
+```
+
+<Tip>
+  Configurez des alertes dans votre tableau de bord pour etre notifie lorsque vous approchez des limites de debit.
+</Tip>

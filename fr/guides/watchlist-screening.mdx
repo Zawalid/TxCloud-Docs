@@ -1,0 +1,137 @@
+---
+title: "Filtrage Watchlist"
+sidebarTitle: "Filtrage Watchlist"
+description: "Filtrez les individus et entites contre les listes de surveillance mondiales"
+icon: "magnifying-glass"
+---
+
+## Apercu
+
+L'API Watchlist filtre les individus et entites contre les listes de sanctions mondiales, les bases de donnees PPE et les sources de medias negatifs pour la conformite AML/CFT.
+
+## Demarrage Rapide
+
+```javascript
+const result = await txcloud.watchlist.screen({
+  type: 'individual',
+  name: 'Mohammed El Amrani',
+  date_of_birth: '1990-05-15',
+  country: 'MA'
+});
+
+console.log('Statut:', result.status);  // 'clear' ou 'potential_match'
+console.log('Correspondances:', result.matches.length);
+```
+
+## Reponse de Filtrage
+
+```json
+{
+  "id": "scr_a1b2c3d4",
+  "status": "clear",
+  "risk_level": "low",
+
+  "entity": {
+    "type": "individual",
+    "name": "Mohammed El Amrani",
+    "date_of_birth": "1990-05-15",
+    "country": "MA"
+  },
+
+  "checks": {
+    "sanctions": { "status": "clear", "matches": 0 },
+    "pep": { "status": "clear", "matches": 0 },
+    "adverse_media": { "status": "clear", "matches": 0 }
+  },
+
+  "matches": []
+}
+```
+
+## Gerer les Correspondances
+
+```javascript
+if (result.status === 'potential_match') {
+  for (const match of result.matches) {
+    console.log(`Correspondance: ${match.name}`);
+    console.log(`Liste: ${match.list_name}`);
+    console.log(`Score: ${match.similarity_score}`);
+
+    // Reviser et resoudre
+    await txcloud.watchlist.matches.resolve(match.id, {
+      resolution: 'false_positive',  // ou 'true_positive', 'escalate'
+      notes: 'Personne differente - verifie par controle ID'
+    });
+  }
+}
+```
+
+## Listes de Surveillance Couvertes
+
+| Liste | Type | Couverture |
+|-------|------|------------|
+| OFAC SDN | Sanctions | Mondiale |
+| ONU Consolidee | Sanctions | Mondiale |
+| Sanctions UE | Sanctions | UE |
+| Sanctions HMT | Sanctions | UK |
+| Listes PPE | Politique | Mondiale |
+| Medias Negatifs | Actualites Negatives | Mondiale |
+
+## Filtrage par Lot
+
+Filtrez plusieurs entites a la fois :
+
+```javascript
+const batch = await txcloud.watchlist.screenBatch({
+  entities: [
+    { type: 'individual', name: 'Personne 1' },
+    { type: 'individual', name: 'Personne 2' },
+    { type: 'entity', name: 'Entreprise ABC' }
+  ]
+});
+
+console.log(`Filtres: ${batch.total}`);
+console.log(`Correspondances: ${batch.with_matches}`);
+```
+
+## Surveillance Continue
+
+Abonnez-vous a la surveillance continue :
+
+```javascript
+await txcloud.watchlist.monitor.subscribe({
+  entity: {
+    type: 'individual',
+    name: 'Mohammed El Amrani'
+  },
+  lists: ['sanctions', 'pep', 'adverse_media'],
+  webhook_url: 'https://votreapp.com/webhooks/watchlist'
+});
+```
+
+## Bonnes Pratiques
+
+<AccordionGroup>
+  <Accordion title="Filtrez a l'Onboarding" icon="user-plus">
+    Filtrez tous les clients lors de l'onboarding initial.
+  </Accordion>
+
+  <Accordion title="Utilisez la Surveillance Continue" icon="eye">
+    Mettez en place une surveillance pour les relations clients a long terme.
+  </Accordion>
+
+  <Accordion title="Documentez les Decisions" icon="file">
+    Enregistrez toujours les decisions de resolution avec des notes pour la piste d'audit.
+  </Accordion>
+</AccordionGroup>
+
+## Prochaines Etapes
+
+<CardGroup cols={2}>
+  <Card title="Verification d'Identite" icon="id-card" href="/fr/guides/verify-identity">
+    Commencez avec la verification d'identite
+  </Card>
+  <Card title="Reference API" icon="code" href="/api-reference/overview">
+    Explorez les endpoints Watchlist
+  </Card>
+</CardGroup>

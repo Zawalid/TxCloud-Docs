@@ -1,0 +1,130 @@
+---
+title: "Codes d'Erreur"
+sidebarTitle: "Codes d'Erreur"
+description: "Reference complete des codes d'erreur TXCloud"
+icon: "triangle-exclamation"
+---
+
+## Format de Reponse d'Erreur
+
+```json
+{
+  "error": {
+    "code": "invalid_document",
+    "message": "L'image du document n'a pas pu etre traitee",
+    "type": "validation_error",
+    "param": "document_front",
+    "request_id": "req_a1b2c3d4"
+  }
+}
+```
+
+## Codes de Statut HTTP
+
+| Statut | Description |
+|--------|-------------|
+| `200` | Succes |
+| `201` | Cree |
+| `400` | Requete Invalide - Parametres invalides |
+| `401` | Non Autorise - Cle API invalide |
+| `403` | Interdit - Permissions insuffisantes |
+| `404` | Non Trouve - La ressource n'existe pas |
+| `409` | Conflit - La ressource existe deja |
+| `429` | Trop de Requetes - Limite de debit atteinte |
+| `500` | Erreur Serveur - Quelque chose s'est mal passe |
+
+## Types d'Erreur
+
+| Type | Description |
+|------|-------------|
+| `validation_error` | Parametres de requete invalides |
+| `authentication_error` | Problemes de cle API |
+| `authorization_error` | Problemes de permission |
+| `not_found_error` | Ressource non trouvee |
+| `rate_limit_error` | Limite de debit depassee |
+| `idempotency_error` | Conflit de cle d'idempotence |
+| `api_error` | Erreur serveur interne |
+
+## Codes d'Erreur Courants
+
+### Erreurs d'Authentification
+
+| Code | Description |
+|------|-------------|
+| `unauthorized` | Cle API manquante ou invalide |
+| `forbidden` | La cle API n'a pas les permissions requises |
+| `key_revoked` | La cle API a ete revoquee |
+| `ip_not_allowed` | Requete depuis une IP non autorisee |
+
+### Erreurs de Validation
+
+| Code | Description |
+|------|-------------|
+| `invalid_request` | Le corps de la requete est mal forme |
+| `missing_parameter` | Un parametre requis est manquant |
+| `invalid_parameter` | La valeur du parametre est invalide |
+| `invalid_document` | L'image du document ne peut pas etre traitee |
+| `unsupported_country` | Pays non supporte |
+| `unsupported_document` | Type de document non supporte |
+
+### Erreurs d'Identite
+
+| Code | Description |
+|------|-------------|
+| `document_expired` | Le document a expire |
+| `document_unreadable` | Impossible d'extraire les donnees du document |
+| `face_not_detected` | Aucun visage trouve dans l'image |
+| `face_mismatch` | Le selfie ne correspond pas au document |
+| `liveness_failed` | Le controle de vivacite a echoue |
+| `fraud_detected` | Falsification de document detectee |
+
+### Erreurs de Transaction
+
+| Code | Description |
+|------|-------------|
+| `transaction_declined` | La transaction a ete refusee |
+| `velocity_exceeded` | Limite de debit depassee |
+| `recipient_blocked` | Le destinataire est sur liste noire |
+| `amount_exceeded` | Le montant depasse les limites |
+
+### Erreurs de Limite de Debit
+
+| Code | Description |
+|------|-------------|
+| `rate_limit_exceeded` | Trop de requetes |
+
+La reponse inclut le champ `retry_after` :
+
+```json
+{
+  "error": {
+    "code": "rate_limit_exceeded",
+    "message": "Limite de debit depassee",
+    "retry_after": 30
+  }
+}
+```
+
+## Gerer les Erreurs
+
+```javascript
+try {
+  const result = await txcloud.identity.verify({ ... });
+} catch (error) {
+  switch (error.code) {
+    case 'invalid_document':
+      // Demander a l'utilisateur de reprendre la photo
+      break;
+    case 'face_mismatch':
+      // Demander un nouveau selfie a l'utilisateur
+      break;
+    case 'rate_limit_exceeded':
+      // Attendre et reessayer
+      await sleep(error.retryAfter * 1000);
+      break;
+    default:
+      // Journaliser et afficher une erreur generique
+      console.error('Erreur API:', error);
+  }
+}
+```
